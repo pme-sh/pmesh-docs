@@ -1,0 +1,267 @@
+---
+title: Directives
+sidebar:
+  order: 3
+---
+
+Directives can be thought of "commands" that are applied if the router gets to a certain point.
+They are used to control the flow of the router including the ability to redirect, cancel, or modify the request.
+
+## debug, log, warn, err
+
+These directives are used to log messages to the console. They are useful for debugging and monitoring the router.
+
+```yaml
+site.com, site.local:
+  router:
+    - debug "This is a debug message"
+    - log "This is a log message"
+    - warn "This is a warning message"
+    - err "This is an error message"
+```
+
+## proxy-host
+
+This directive is used to change the host of the request. This changes the `Host` header of the request before it is proxied.
+
+```yaml
+site.com, site.local:
+  router:
+    - proxy-host "example.com"
+```
+
+## path
+
+The `path` directive is used to change the path of the request. This changes the `Path` of the request before it is proxied.
+Note that although proxy-host will not affect the router, path will.
+
+```yaml
+site.com, site.local:
+  router:
+    - path "/new-path"
+    - site.com/new-path: log "Hit new path"
+```
+
+The above example will change the path of the request to `/new-path` which will always hit the `site.com/new-path` route.
+
+## path-join
+
+The `path-join` directive is used to change the path similar to `path` but it will do so relative to the current path.
+
+```yaml
+site.com, site.local:
+  router:
+    - path "/new-path"
+    - path-join "./sub-path"
+```
+
+The above example will change the path of the request to `/new-path/sub-path`.
+
+## path-ljoin
+
+The `path-ljoin` directive is used to change the path by performing a left join with the current path.
+
+```yaml
+site.com, site.local:
+  router:
+    - path "/new-path"
+    - path-ljoin "/sub-path"
+```
+
+The above example will change the path of the request to `/sub-path/new-path`.
+
+## path-trim
+
+The `path-trim` directive is used to trim the path of the request. This will remove the suffix from the path.
+
+```yaml
+site.com, site.local:
+  router:
+    - path "/new-path"
+    - path-trim "/new-path"
+```
+
+The above example will change the path of the request to `/`.
+
+## path-ltrim
+
+The `path-ltrim` directive is used to trim the path of the request. This will remove the prefix from the path.
+
+```yaml
+site.com, site.local:
+  router:
+    - path "/new-path"
+    - path-ltrim "/new-path"
+```
+
+The above example will change the path of the request to `/`.
+
+## header, proxy-header
+
+The `header` directive is used to set a header on the response, while the `proxy-header` directive is used to set a header on the request.
+
+```yaml
+site.com, site.local:
+  router:
+    - header "X-Header" "Value"
+    - proxy-header "X-Header" "Value"
+```
+
+## add-header, add-proxy-header
+
+The `add-header` directive is used to add a header to the response, while the `add-proxy-header` directive is used to add a header to the request.
+
+Difference between `header` and `add-header` is that `header` will replace the header if it already exists, while `add-header` will add the header to the existing headers.
+
+```yaml
+site.com, site.local:
+  router:
+    - header "X-Header" "Value"
+    - add-header "X-Header" "Value2"
+```
+
+This will result in the `X-Header` header having the value `Value, Value2`.
+
+## del-header, del-proxy-header
+
+The `del-header` directive is used to delete a header from the response, while the `del-proxy-header` directive is used to delete a header from the request.
+
+```yaml
+site.com, site.local:
+  router:
+    - del-header "X-Header"
+    - del-proxy-header "X-Header"
+```
+
+## rewrite
+
+The `rewrite` directive is used to rewrite the request path. It is used to change the path of the request before it is proxied.
+
+```yaml
+site.com, site.local:
+  router:
+    - rewrite /hi/(.*) /hello/$1.txt
+```
+
+The above example will change the path of the request from `/hi/there` to `/hello/there.txt`.
+
+## status
+
+The `status` directive is used to set the status code of the response, and then abort the request.
+
+```yaml
+site.com, site.local:
+  router:
+    - status 404
+```
+
+## return
+
+Similar to `status`, the `return` directive is used to set the status code of the response, and then abort the request.
+But it also allows you to set a message in the response.
+
+```yaml
+site.com, site.local:
+  router:
+    - return 404 "Not Found"
+```
+
+## redirect
+
+The `redirect` directive is used to redirect the request to another URL.
+
+```yaml
+site.com, site.local:
+  router:
+    - redirect "https://example.com"
+```
+
+## abort
+
+The `abort` directive is used to abort the request, which will reset the connection.
+
+```yaml
+site.com, site.local:
+  router:
+    - abort
+```
+
+## drop
+
+The `drop` directive is used to drop the request from the current mux.
+
+```yaml
+site.com, site.local:
+  router:
+    - site.com/hi/:
+        - site.com/hi/there: drop
+        - return 200
+    - return 404
+```
+
+In the above example, if the request is `/hi/there`, it will be dropped and the response will be `404`, whereas `/hi/mark` will return `200`.
+
+## internal
+
+The `internal` directive is used to mark the route as internal.
+This is used to prevent the route from being accessed directly, and can only be accessed from within the router and from a local request.
+
+```yaml
+site.com, site.local:
+  router:
+    - internal
+```
+
+## allow-internal
+
+The `allow-internal` directive is used to allow internal requests to access the route.
+
+```yaml
+site.com, site.local:
+  router:
+    - allow-internal
+    - internal
+    - return 200
+```
+
+with the above example, the route can only be accessed from within the router and from a local request, but since we have `allow-internal`, it will allow bypass this restriction.
+
+## portal
+
+Generally, from within a router, you are not allowed to change between virtual hosts.
+The `portal` directive is used to allow you to 'portal' to another virtual host, and additionally mark the request as internal.
+This may cause a restart loop if not used correctly, so use with caution.
+
+```yaml
+site.com, site.local:
+  router:
+    - portal "https://example.com"
+example.com:
+  router:
+    - internal
+    - return 200
+```
+
+In the above example, if the request is to `site.com`, it will portal to the `example.com` virtual host and return `200`.
+But if the request is to `example.com`, it will be `403` because it is marked as internal.
+
+## write-timeout, read-timeout
+
+The `write-timeout` and `read-timeout` directives are used to set the write and read deadlines of the response.
+
+```yaml
+site.com, site.local:
+  router:
+    - write-timeout 30s
+    - read-timeout 5s
+```
+
+## auth
+
+The `auth` directive is used to set basic authentication on the route.
+
+```yaml
+site.com, site.local:
+  router:
+    - auth Realm root:1234
+```

@@ -1,36 +1,50 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
+title: pmesh - one tool, one config, all your workflows
 template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
+  tagline: All-in-one solution for building, deploying, and observing modern web applications. <b>Own your infrastructure.</b>
   image:
-    file: ../../assets/houston.webp
+    file: ../../assets/pmesh_l.png
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: ""
+      link: /getting-started
       icon: right-arrow
       variant: primary
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
-      icon: external
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
-
-## Next steps
+import { Card, CardGrid } from "@astrojs/starlight/components";
 
 <CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
+	<Card title="Reverse proxy" icon="up-caret">
+		SSL termination with automatically issued certificates, routing, rate-limiting, load balancing, GeoIP, URL signing
+		and even queueing webhooks as messages, without sacrificing performance.
 	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
+	<Card title="Service discovery" icon="magnifier">
+		From your largest monolith to an anonymous function, discover the simplest way to register and interconnect all your
+		services. Effortless routing lets every function, big or small, find its place in your ecosystem.
 	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
+	<Card title="Build, execute, observe" icon="rocket">
+		Run your build pipeline where you serve your application, hotswap services with zero downtime, automatically scale
+		NodeJS applications based on load, monitor health and resource usage, all with minimal setup, supporting a wide
+		array of languages and frameworks.
 	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
+	<Card title="Topology management" icon="seti:graphql">
+		Manage any scale of infrastructure with ease. Assign local DNS names, form and connect clusters automatically, and
+		establish gateways for effortless superclustering. Join your nodes with a simple `pmesh join pmtp://...` command -
+		forget about hard-coded IPs, manual setups, and all the hassles of traditional infrastructure management.
+	</Card>
+	<Card title="Queue, publish, subscribe" icon="telegram">
+		With the embedded JetStream server, you have a powerful message queue system that can be used for event sourcing,
+		communication between services, and even as a simple pub/sub system. Fast, reliable, easy to use and directly
+		integrated with the rest of the platform.
+	</Card>
+	<Card title="KV and Object Storage" icon="list-format">
+		Utilize the integrated KV and Object Storage for a multifaceted approach to data management. Whether as a cache,
+		database, or file storage, experience unparalleled flexibility.
+	</Card>
+	<Card title="Distributed, yet unified logging" icon="document">
+		Centralize your logs effortlessly. Enjoy automated rotation, compression, and the ability to tail, search, and
+		stream logs with a single command. Enhanced with Ray ID for precise request tracing, streamline your log management
+		like never before.
 	</Card>
 </CardGrid>

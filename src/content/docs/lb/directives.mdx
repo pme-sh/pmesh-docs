@@ -1,0 +1,85 @@
+---
+title: Configuration
+sidebar:
+  order: 1
+---
+
+The pmesh load balancer allows you to configure the load balancing strategy, the session kind, the retry policy, and the error handling for 4xx, 5xx, and 404 responses.
+
+```yaml
+retry:
+  attempts: 3
+  backoff: 1s
+  timeout: 10s
+strat: round-robin
+state: sticky
+404:
+  limit: 1/s block_after=2/s block_for=10m
+  handle:
+    - log "hi"
+4xx:
+  handle:
+    - log "bad user! bad!"
+5xx:
+  handle:
+    - log "bad server!"
+```
+
+## Retry Policy | `retry`
+
+- **Type**: `object`
+- **Default**: `{ attempts: 8, backoff: 500ms, timeout: 30s }`
+
+The `retry` field is an object that defines the retry policy for the app.
+
+```yaml
+retry:
+  attempts: 3
+  backoff: 1s
+  timeout: 10s
+```
+
+The `attempts` field is the number of attempts to make before giving up, the `backoff` field is the initial backoff time, and the `timeout` field is the maximum time to wait for the app to become ready.
+
+This is used to handle the case where the app crashes or fails to start, and pmesh will attempt to restart it a few times before giving up.
+
+The `backoff` time is exponentially increased with each attempt.
+
+## Load Balancing Strategy | `strat`
+
+- **Type**: `least | random | round-robin | hash`
+- **Default**: `round-robin`
+
+The `strat` field is a string that defines the load balancing strategy for the app.
+
+The available strategies are:
+
+- `least`: The least connections strategy.
+- `random`: The random strategy.
+- `round-robin`: The round-robin strategy.
+- `hash`: The hash strategy.
+
+## State Kind | `state`
+
+- **Type**: `sticky | none`
+- **Default**: `sticky`
+
+The `state` field is a string that defines the session kind for the app, which can be either `sticky` or `none`.
+
+For the `sticky` session kind, pmesh will use the same backend for the same client, whereas for the `none` session kind, pmesh will pick a random backend for each request.
+
+If a retriable error occurs during the handling of a request, pmesh will ignore the sticky session and pick a new upstream.
+
+## Error Handling | `4xx`, `5xx`, `404`
+
+- **Type**: `object?`
+- **Default**: `null`
+
+The `4xx`, `5xx`, and `404` fields are objects that define the error handling for 4xx, 5xx, and 404 responses.
+
+If the `limit` field is set, pmesh will rate limit the error responses, for example if the user is sending too many requests,
+that are resulting in 404 responses, pmesh can block the user for a certain amount of time to prevent abuse.
+
+The `handle` field can be used to define an optional router that will handle the error responses.
+If this router, explicitly drops the request, pmesh will not retry the request, and will return the error response to the client.
+Otherwise, if the request is not completed within the router, it will be retried according to the retry policy.

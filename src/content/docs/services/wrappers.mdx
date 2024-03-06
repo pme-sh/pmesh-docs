@@ -1,0 +1,113 @@
+---
+title: Wrappers
+sidebar:
+  order: 2
+---
+
+pmesh provides a set of builtin wrappers around the `App` type we discussed earlier, to make it easier to run and build commonly used languages and frameworks.
+As they wrap the `App` type, any configuration that can be used in the `App` type can also be used in these wrappers.
+
+## Node.js Applications
+
+For plain Node.js applications, you can use the `Js` service. Which just runs the `index.js` file using `node`.
+
+```yaml
+myapp: !Js
+  index: src/server.js
+```
+
+## Npm Packages
+
+For applications that use npm, pnpm, or yarn, you can use the `Npm`, `Pnpm`, or `Yarn` services.
+These services will automatically detect the package manager, install the dependencies, build and run the applications.
+
+One downside of `npm run <script>` is that it will first launch a shell to run the npm command, which in turn will launch the underlying command as a child,
+and then node will finally be launched as a grandchild of the original command. This can lead to a lot of unnecessary processes, resource usage, and making it harder to manage the process.
+
+With builtin support for package.json parsing, pmesh will try to escape the script command and avoid using `npm run` if possible.
+For instance, if the `start` script defined in the package.json is `tsx myapp.ts`, pmesh will:
+
+- First, try resolve the `tsx` package in the global and local module repositories to run `node --import file://.../tsx myapp.ts`.
+- If not possible, try resolving the `tsx` executable in the command line path to run `tsx myapp.ts`.
+- As a last resort, fall back to `npm run start`.
+
+```yaml
+myapp: !Yarn
+  start_script: start
+  build_script: build
+  no_install: false
+```
+
+### `start_script`
+
+- Type: `string`
+- Default: `start`
+
+The script to run using `npm run <script>`. You can also set it to `none` to disable running the script.
+
+### `build_script`
+
+- Type: `string`
+- Default: `build`
+
+The script to run using `npm run <script>` before starting the application. You can also set it to `none` to disable running the script.
+
+### `no_install`
+
+- Type: `bool`
+- Default: `false`
+
+If set to `true`, it will not install the dependencies before running the application.
+
+## Python Applications
+
+For Python applications, you can use the `Py` service. It will automatically create a virtual environment, install the dependencies, and run the application.
+
+```yaml
+myapp: !Py
+  requirements: requirements.txt
+  main: app.py
+```
+
+### `requirements`
+
+- Type: `string`
+- Default: `requirements.txt`
+
+The path to the requirements file.
+
+### `main`
+
+- Type: `string`
+- Default: `app.py`
+
+The main file to run.
+
+## Flask Applications
+
+For Flask applications, you can use the `Flask` service. It will automatically create a virtual environment, install the dependencies, and run the application.
+
+```yaml
+myapp: !Flask
+  requirements: requirements.txt
+  main: app.py
+```
+
+Configuration is the same as the `Py` service, but it will also set the `FLASK_APP` environment variable to the main file, and run the `flask run` command.
+It will also set the `FLASK_RUN_HOST` and `FLASK_RUN_PORT` environment variables to the host and port assigned.
+
+## Go Applications
+
+For Go applications, you can use the `Go` service. It will automatically build and run the application.
+
+```yaml
+myapp: !Go
+  main: main.go
+```
+
+### `main`
+
+- Type: `string`
+- Default: `main.go`
+
+The main file to build and run.

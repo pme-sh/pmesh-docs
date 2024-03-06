@@ -1,0 +1,42 @@
+---
+title: Services
+sidebar:
+  order: 4
+---
+
+Finally, we have reached the last section of the routing, which is the `services` section.
+Now that all the middleware has been applied, the request is ready to be sent to the service.
+
+## Named services
+
+The services we define in the `services` block register as named handlers in the router, so we can just call them by name in the router.
+
+```yaml
+site.com, site.local:
+  router:
+    - api.site.com/:
+        - api # This will call the service named `api`
+```
+
+## Beacons and publishing
+
+The alternative to forwarding the request to a service direclty is to use `beacon` and `publish` directives.
+This will instead send a message to the message broker, which can be picked up by a runner, as we will be exploring later.
+
+```yaml
+site.com, site.local:
+  router:
+    - event.site.com/:
+        - publish webhooks.event # This will publish the request to the `webhooks.event` topic and make sure it is delivered.
+    - telemetry.site.com/:
+        - beacon task.sentry # This will send a beacon to the `task.sentry` topic, but will not make the request wait.
+```
+
+The main difference between `beacon` and `publish` is that:
+
+- a `beacon` is a fire-and-forget message with no delivery guarantee.
+- a `publish` is a message that MUST deliver before the request is completed.
+
+The `event.site.com` route above will publish to the `webhooks.event` topic and make sure it is delivered before returning a `200 OK` response to the client.
+
+The `telemetry.site.com` route on the other hand will publish to the `task.sentry` topic, but issue `202 Accepted` immediately.

@@ -1,0 +1,113 @@
+---
+title: Switch
+sidebar:
+  order: 2
+---
+
+Switch is built on top of the mux, but instead routes a specific variable instead of the path.
+
+## Host
+
+The `Switch-Host` router will route the request based on the `Host` header.
+
+```yaml
+site.com, site.local:
+  router:
+    - !Switch-Host:
+      - x.site.com: status 404
+    - hi
+```
+
+| Request Host | Result |
+| ------------ | ------ |
+| site.com     | hi     |
+| x.site.com   | 404    |
+
+## Path
+
+The `Switch-Path` router will route the request based on the `Path` header.
+
+```yaml
+site.com, site.local:
+  router:
+    - !Switch-Path:
+      - /hi: status 404
+    - hi
+```
+
+| Request Path  | Result |
+| ------------- | ------ |
+| w.site.com    | hi     |
+| a.site.com    | hi     |
+| w.site.com/hi | 404    |
+| a.site.com/hi | 404    |
+
+## Method
+
+The `Switch-Method` router will route the request based on the `Method` header.
+
+```yaml
+site.com, site.local:
+  router:
+    - !Switch-Method:
+      - POST: status 404
+    - hi
+```
+
+| Request Method | Result |
+| -------------- | ------ |
+| GET            | hi     |
+| POST           | 404    |
+
+## Proto
+
+The `Switch-Proto` router will route the request based on the protocol version of the request.
+This is useful for routing HTTP/2 requests differently than HTTP/1.1 requests, for instance for upgrades to WebSocket.
+
+```yaml
+site.com, site.local:
+  router:
+    - !Switch-Proto:
+      - HTTP/1.0: status 404
+    - hi
+```
+
+| Request Proto | Result |
+| ------------- | ------ |
+| HTTP/1.0      | 404    |
+| HTTP/1.1      | hi     |
+| HTTP/2.0      | hi     |
+
+## UserAgent
+
+The `Switch-UserAgent` router will route the request based on the `User-Agent` header.
+
+```yaml
+site.com, site.local:
+  router:
+    - !Switch-UserAgent:
+      - Mozilla: status 404
+    - hi
+```
+
+| Request User-Agent | Result |
+| ------------------ | ------ |
+| Mozilla            | 404    |
+| Chrome             | hi     |
+
+## Referer
+
+The `Switch-Referer` router will route the request based on the `Referer` header.
+
+```yaml
+site.com, site.local:
+  router:
+    - !Switch-Referer:
+      - /hi: status 404
+    - hi
+```
+
+| Request Referer | Result |
+| --------------- | ------ |
+| /hi             | 404    |
+| /hello          | hi     |

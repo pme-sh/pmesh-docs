@@ -1,0 +1,97 @@
+---
+title: Rate limiting
+sidebar:
+  order: 4
+---
+
+Rate limiting is a mechanism to control the number of requests that a client can make to an API within a given time frame.
+This is useful to prevent abuse and to ensure that the API is available to all clients.
+
+## Configuration
+
+Configuration of a rate limiter can be done either in the short-hand string format or in the long-hand object format.
+For exploring each field, let's consider the configuration in the long-hand object format.
+
+```yaml
+site.com, site.local:
+  router:
+    - api.site.com/:
+        - !Limit
+          id: "api"
+          rate: 10/s
+          burst: 100
+          block_after: 100/s
+          block_for: 1m
+          advise: true
+        - api
+```
+
+### id
+
+- Type: `string?`
+- Default: `none`
+
+An optional identifier for the rate limiter, which is used to bucket the request into a specific group.
+
+### rate
+
+- Type: `rate`
+- Default: `none`
+
+The rate at which requests are allowed. The rate is specified as a number of requests per second, minute, hour, or day.
+
+For example:
+
+- `10/s` - 10 requests per second
+- `1m` - 1 request per minute
+
+### burst
+
+- Type: `int?`
+- Default: `none`
+
+The maximum burst size. This is the maximum number of requests that can be made in a single burst, which is useful for handling short-term spikes in traffic.
+
+### block_after
+
+- Type: `rate?`
+- Default: `none`
+
+The rate at which the client should be blocked after making excessive requests. This is useful for skipping the queue immediately when the client is obviously malicious.
+
+### block_for
+
+- Type: `duration?`
+- Default: `none`
+
+The duration for which the client should be blocked. This is the duration for which the client is banned website wide after reading the `block_after` rate.
+
+### advise
+
+- Type: `bool?`
+- Default: `false`
+
+Whether to advise the client on the block duration. This is useful for informing the client about the block duration, so that they can adjust their behavior accordingly.
+If `true`, the client will receive a `Retry-After` header with the information required. This can be useful if you are serving an API and you want the implementation to be
+aware of the rate limit.
+
+## Short-hand format
+
+The short-hand format is a string that represents the rate limiter configuration in a single line. The format is as follows:
+
+- If the rate limiter starts with `@`, then the value after `@` is the `id` of the rate limiter.
+- After that is the `rate` of the rate limiter.
+- If the rate limiter has a `burst` value, then it is specified as `burst=<value>`.
+- If the rate limiter has a `block_after` value, then it is specified as `block_after=<rate>`.
+- If the rate limiter has a `block_for` value, then it is specified as `block_for=<duration>`.
+- If the rate limiter has an `advise` value, then it is specified as `advise=<bool>`.
+
+For example, the limit above can be represented in the short-hand format as follows:
+
+```yaml
+site.com, site.local:
+  router:
+    - api.site.com/:
+        - limit @api 10/s burst=100 block_after=100/s block_for=1m advise=1
+        - api
+```

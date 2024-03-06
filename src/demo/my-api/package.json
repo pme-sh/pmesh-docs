@@ -1,0 +1,13 @@
+{
+	"name": "my-api",
+	"scripts": {
+		"start": "tsx app.ts"
+	},
+	"type": "module",
+	"dependencies": {
+		"@types/node": "^20.11.17",
+		"fastify": "^4.25.2",
+		"typescript": "^5.3.3",
+		"tsx": "4.6.2"
+	}
+}

@@ -1,0 +1,126 @@
+---
+title: Health Monitoring
+sidebar:
+  order: 2
+---
+
+For considering an instance as healthy, pmesh will perform a series of checks to ensure that the instance is healthy and ready to serve traffic.
+If these checks fail, pmesh will consider the instance as unhealthy and will route to another instance if available.
+The checks are defined in the `monitor` field of the configuration file for `App` and `Proxy` services.
+
+```yaml
+monitor:
+   healthy:
+      interval: 5s
+      threshold: 3
+   unhealthy:
+      interval: 5s
+      threshold: 3
+   timeout: 5s
+   test:
+	   "front-page-test": GET / 200
+```
+
+## Loop configuration | `healthy`, `unhealthy`
+
+- **Type**: `object`
+- **Default**: `{ interval: 5s, threshold: 3 }`
+
+The `healthy` and `unhealthy` fields are objects that define the loop configuration for healthy and unhealthy checks.
+
+Once the instance is considered healthy/unhealthy, the parameters of the specific loop will be used to determine the frequency of the checks.
+One use case for this is to reduce the health checks when the instance is healthy and aggressively check when the instance is unhealthy to recover the state as soon as possible.
+Conversely you might want to reduce the checks when the instance is unhealthy to avoid overloading the instance.
+
+The `interval` field is the time between checks, and the `threshold` field is the number of checks that confirm the diagnosis before switching the state.
+
+## Timeout | `timeout`
+
+- **Type**: `duration`
+- **Default**: `5s`
+
+The `timeout` field is the maximum time to wait for the check to complete, if the check takes longer than this time, it will be considered as failed.
+
+## Checks | `test`
+
+- **Type**: `string -> checker`
+- **Default**: `{ tcp check to ensure the instance is reachable }`
+
+The `test` field is a map of named checks that are used to determine the health of the instance.
+
+The key of the map is the name of the check, and the value is the checker that will be used to perform the check.
+
+The available checkers are:
+
+- `tcp`: A TCP check to ensure the instance is reachable.
+- `http`: An HTTP check to ensure the instance is responding to a request as it should.
+
+## TCP Check
+
+```yaml
+monitor:
+  test:
+    "tcp-check": !Tcp {}
+```
+
+The `Tcp` checker is a simple checker that checks if the instance is reachable over TCP, it takes no other parameters.
+
+## HTTP Check
+
+```yaml
+monitor:
+  test:
+    "http-check": !Http
+      method: GET
+      path: /health
+      follow_redirects: false
+      header:
+        "User-Agent": "pmesh"
+      code: 200
+      body: "OK"
+    "short-check": "GET / 200" # shorthand for METHOD Path Code
+```
+
+The `Http` checker is a more complex checker that checks if the instance is responding to an HTTP request as it should.
+
+### Method | `method`
+
+- **Type**: `GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS`
+- **Default**: `GET`
+
+The `method` field is a string that defines the HTTP method to use for the request.
+
+### Path | `path`
+
+- **Type**: `string`
+- **Default**: `/`
+
+The `path` field is a string that defines the path to request.
+
+### Follow Redirects | `follow_redirects`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+The `follow_redirects` field is a boolean that defines if the request should follow redirects.
+
+### Header | `header`
+
+- **Type**: `map[string]string`
+- **Default**: `{}`
+
+The `header` field is a map that defines the headers to send with the request.
+
+### Code | `code`
+
+- **Type**: `int`
+- **Default**: `200`
+
+The `code` field is an integer that defines the expected status code of the response.
+
+### Body | `body`
+
+- **Type**: `string`
+- **Default**: `""`
+
+The `body` field is a substring that we expect to find in the response body.

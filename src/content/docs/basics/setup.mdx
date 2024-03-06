@@ -1,0 +1,72 @@
+---
+title: Prepare the server
+sidebar:
+  order: 1
+---
+
+The `pmesh setup` command is used to configure the network settings for the node. This can be used to setup any kind of topology, from a single node to a full mesh. You will need to run this command before starting the server for the first time.
+
+## Node types
+
+If you are running a local development server, you will want to create a seed server since you are the first node in the network, but for the production server, there are many options to choose from.
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+<CardGrid>
+	<Card title="Seed server" icon="star">
+		`pmesh setup seed`
+		<p>
+			Used for your very first server, it will be used to bootstrap the network as the first leader of the RAFT
+			topology.
+		</p>
+	</Card>
+	<Card title="Full node" icon="moon">
+		`pmesh setup join`
+		<p>
+			Full member of a mesh similar to a seed server, but it needs to join an existing mesh. Typically this should be
+			used for long-running servers as they can be elected as the leader.
+		</p>
+	</Card>
+	<Card title="Light replica" icon="sun">
+		`pmesh setup replica`
+		<p>
+			Light replica of a mesh, holds a copy of the state to serve locally, but does not participate in elections. This
+			is useful for read-only replicas or for servers that are not always online.
+		</p>
+	</Card>
+	<Card title="Client" icon="laptop">
+		`pmesh setup client`
+		<p>
+			Used for clients that want to connect to the services on the mesh, but do not participate in the topology. This
+			can be used for any ephemeral service that needs to connect to the mesh, or if you wish to run the NATS.io server
+			yourself.
+		</p>
+	</Card>
+</CardGrid>
+
+## Under the hood
+
+The configuration you provide is used to setup the NATS cluster which are typically quite a bit more [cumbersome](https://docs.nats.io/running-a-nats-service/configuration/clustering/jetstream_clustering).
+For starters, NATS will reject to run a cluster of size one or two, and will not tolerate any fault in the network until you have at least three nodes.
+
+To take care of this, pmesh uses a fork of the project with the necessary changes to make it work out of the box.
+Additionally, the NATS configuration is generated automatically, placing the servers nearby in the same cluster, and connecting the rest using supercluster gateways.
+It will also update itself as you connect new servers so this becomes a set-and-forget operation.
+
+## Example
+
+Let's setup a new server as a seed server using the interactive setup command for our local development environment.
+
+```sh
+pmesh setup
+```
+
+<script
+	async
+	id="asciicast-FLKkf1hCdF0hguuTfbttO5mPi"
+	src="https://asciinema.org/a/FLKkf1hCdF0hguuTfbttO5mPi.js"
+></script>
+
+## Changing the configuration
+
+The setup command will create a `settings.json` file in the `~/.pmesh` directory. To make changes or fetch a value, you can use the `pmesh get` and `pmesh set` commands.

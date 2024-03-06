@@ -1,0 +1,94 @@
+---
+title: Mux
+sidebar:
+  order: 1
+---
+
+The most basic router is the `mux` router in the form of `pattern: handler`, which is a simple key-value pair.
+The key matches `host/path` and the value is the handler to call, which can also be another mux if it is a sequence.
+
+Note that any virtual host aliases that are defined at the virtual host level are resolved into the first variant.
+
+## Prefix Matching (`/` & `+`)
+
+The prefix matcher can come in two forms: `foo/` and `foo+`.
+The former matches the prefix exactly, including the trailing slash, while the latter matches the prefix and any string that follows.
+
+```yaml
+site.com, site.local:
+  router:
+    - site.com/foo/: bar
+    - site.com/foo+: foo
+```
+
+| Path             | Handler |
+| ---------------- | ------- |
+| site.com/foo/    | bar     |
+| site.local/foo/  | bar     |
+| site.com/foo/bar | bar     |
+| site.com/foo     | foo     |
+| site.com/foobar  | foo     |
+
+## Suffix Matching (`+`)
+
+The suffix matcher is similarly in the form of `+foo` and matching the suffix exactly, without the plus sign.
+
+```yaml
+site.com, site.local:
+  router:
+    - +.map: abort
+```
+
+| Path           | Handler |
+| -------------- | ------- |
+| site.com/a     | -       |
+| site.com/a.map | abort   |
+
+## Regex Matching (`~`)
+
+The above examples are fast and efficient, but sometimes you need more complex matching. This is where the regex matcher comes in, in the form of `~pattern`.
+
+```yaml
+site.com, site.local:
+  router:
+    - ~/\d\d.json$: status 404
+```
+
+| Path              | Handler    |
+| ----------------- | ---------- |
+| site.com/12.json  | status 404 |
+| site.com/123.json | -          |
+| site.com/12.json5 | -          |
+
+## Exact Matching
+
+Anything that doesn't match the above patterns is treated as an exact match.
+
+```yaml
+site.com, site.local:
+  router:
+    - site.com/foo: foo
+    - site.com/bar: bar
+```
+
+| Path            | Handler |
+| --------------- | ------- |
+| site.com/foo    | foo     |
+| site.com/bar    | bar     |
+| site.com/foobar | -       |
+
+## Multiple Matchers (`, `)
+
+You can also combine multiple matchers using the or operator `, ` (mind the space).
+
+```yaml
+site.com, site.local:
+  router:
+    - site.com/foo, site.com/bar: foobar
+```
+
+| Path            | Handler |
+| --------------- | ------- |
+| site.com/foo    | foobar  |
+| site.com/bar    | foobar  |
+| site.com/foobar | -       |

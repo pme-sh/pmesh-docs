@@ -1,0 +1,238 @@
+---
+title: Manifest Preprocessor
+sidebar:
+  order: 3
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+We've created a simple manifest file in the previous step.
+We'll explore each of the fields in detail in the following sections but before we go any further, let's explore the format.
+
+```yaml
+services:
+  assets: !FS {}
+  my-api: !Pnpm {}
+
+server:
+  myapi.org, myapi.local:
+    router:
+      - assets.myapi.org/: assets
+      - my-api.myapi.org/: my-api
+hosts:
+  - assets.myapi.local
+  - my-api.myapi.local
+```
+
+At first glance, it might seem like a normal YAML file but before it is parsed, it is transformed through the pmesh preprocessor, `LYML` (Lua YAML).
+This allows us to use Lua code in the YAML file to define conditions, loops, and other control structures.
+
+You can preview the transformed YAML file by running `pmesh preview [file]` in the terminal.
+
+:::danger[Keep it simple, stupid]
+Note that despite the flexibility of the format, we recommend keeping the manifest file as simple as possible.
+
+This format was created out of necessity to handle cases where you might need to split certain definitions into multiple files or to handle conditions such as
+different configurations for different environments (development, staging, and production), operating systems, or architectures.
+:::
+
+## The locals block `$`
+
+The `locals` block is used to define variables that can be used throughout the manifest file.
+This is useful for defining common values that are used in multiple places.
+It should be placed at the top of the node for clarity and is named `$`.
+
+<Tabs>
+<TabItem label="Input">
+```yaml
+$:
+  a: 9
+  b: $(a*2)
+a:
+  c: $(HOST)
+  d: $(a*2)
+```
+
+</TabItem>
+<TabItem label="Output">
+
+```yaml
+a:
+  c: "myhostname"
+  d: 18
+```
+
+</TabItem>
+</Tabs>
+
+The `$(...)` syntax is used to evaluate the expression inside the brackets and replace it with the result.
+You can also replace this entire block with a Lua script by making it a multiline string literal like so:
+
+```yaml
+$: |
+  a = 9
+  b = a * 2
+```
+
+## Globals
+
+You might have noticed the `$(HOST)` variable.
+
+we have a special set of variables that we can use in the manifest file, which are:
+
+- `HOST` - The hostname of the machine
+- `MACH` - The machine ID
+- `IMACH` - The machine ID as an integer
+- `OS` - The operating system
+- `ARCH` - The architecture
+- `PID` - The process ID
+- `PPID` - The parent process ID
+- `USER` - The user ID
+- `CPU` - The number of CPUs
+- `RAM` - The total RAM
+- `args` - The command line arguments
+- `match` - A function to match a string with a regular expression
+- `glob` - A function to match a pattern with a glob
+- `parse` - A function to parse a file
+- `fetch` - A function to fetch a URL
+- `env` - A table of environment variables
+- `ud` - The peer user data (A set of key-value pairs shared with all the machines to tag this node, can be set via `pmesh set peer-ud [key] [value]`)
+- `localud` - The local user data (A private set of key-value pairs to use in this machine, can be set via `pmesh set local-ud [key] [value]`)
+
+## Conditional Blocks `- ${cc}` and `${cc}:`
+
+If the `${...}` syntax is used in a list, or in a key-value pair that starts another key-value pair, it is treated as a conditional block
+and the expression inside the brackets is evaluated to determine if rest should be mixed in or not.
+
+<Tabs>
+<TabItem label="Input">
+```yaml
+a:
+  one: 1
+  ${if match("hi mom", "hi ...")}:
+    two: 2
+    three: 3
+b:
+  - 1
+  - ${if 5==5}:
+      - 2
+      - 3
+  - ${if 4~=5}: 4
+```
+
+</TabItem>
+<TabItem label="Output">
+
+```yaml
+a:
+  one: 1
+  two: 2
+  three: 3
+b:
+  - 1
+  - 2
+  - 3
+  - 4
+```
+
+</TabItem>
+</Tabs>
+
+## Switch Blocks `${match ...}:`
+
+The `${match ...}` syntax is used to define a switch block, which match the string value of the expression against the cases interpreted as regular expressions.
+
+<Tabs>
+<TabItem label="Input">
+```yaml
+test:
+  - ${match "world"}:
+      kek:
+        - 1
+      oyy:
+        - 2
+      ".*orld":
+        - "hello"
+```
+
+</TabItem>
+<TabItem label="Output">
+
+```yaml
+test:
+  - "hello"
+```
+
+</TabItem>
+</Tabs>
+
+## Loop Blocks `${each ...}`
+
+The `${each ...}` syntax is used to define a loop block, which iterates over the array or table and mixes in the rest of the block for each element.
+It can be used in any of the following forms:
+
+- `${each table}` - Iterates over the table without any locals
+- `${each table as key}` - Iterates over the keys of the table
+- `${each table as key, value}` - Iterates over the key-value pairs of the table
+
+<Tabs>
+<TabItem label="Input">
+
+```yaml
+test:
+  - ${each {1,2,3} as k,i}:
+      - $(i*100)
+```
+
+</TabItem>
+<TabItem label="Output">
+
+```yaml
+test:
+  - 100
+  - 200
+  - 300
+```
+
+</TabItem>
+</Tabs>
+
+## Import directive `$import`
+
+You can import other files into the manifest file using the `$import: "file"` syntax which will be mixed in similar to other blocks.
+
+import { FileTree, Code } from "@astrojs/starlight/components";
+
+<FileTree>
+
+- this.yml
+- hi
+  - a.yml # Contains `a: 1`
+  - b.yml # Contains `b: 2`
+
+</FileTree>
+<Tabs>
+<TabItem label="Input">
+
+```yaml
+test:
+  $import: ./hi/*.yml
+  files:
+    - $import: ./hi/a.yml
+    - $import: ./hi/b.yml
+```
+
+</TabItem>
+<TabItem label="Output">
+
+```yaml
+test:
+  a: 1
+  b: 2
+  files:
+    - a: 1
+    - b: 2
+```
+
+</TabItem>
+</Tabs>

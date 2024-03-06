@@ -1,0 +1,43 @@
+---
+title: Getting Started
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+**pmesh** is an all-in-one service manager, reverse proxy, and enterprise service bus.
+It is designed to be a simple and powerful all-in-one replacement for a wide variety of tools commonly deployed in web services.
+
+It is currently in alpha and under active development, as is this documentation.
+Please report any issues you encounter on the Github issue tracker including areas lacking clarity, missing information, or containing errors.
+
+## Installation
+
+pmesh is available as a prebuilt binary for Linux, macOS, and Windows on the Github releases page for `amd64` and `arm64` architectures.
+You can also build from source if you have Go 1.22 or later installed.
+
+<Tabs>
+<TabItem label="Installer for linux/macOS">
+
+```sh
+curl -fsSL https://get.pme.sh/install.sh | bash
+# to install a specific version
+curl -fsSL https://get.pme.sh/install.sh | bash -s "v0.1.5"
+```
+
+:::note[Unzip required]
+The unzip package is required to extract the binary. Use `sudo apt-get install unzip` to install it.
+:::
+
+</TabItem>
+<TabItem label="Building from source">
+
+```sh
+go install get.pme.sh/pmesh@latest
+```
+
+:::note[Go 1.22+ required]
+You need to have Go 1.22 or later installed to build from source.
+:::
+
+</TabItem>
+</Tabs>

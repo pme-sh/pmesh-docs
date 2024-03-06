@@ -1,0 +1,19 @@
+# What we want to run?
+services:
+  # <Name of the service>: !<Tag of the service wrapper> ...Configuration
+  assets: !FS {}
+  my-api: !Pnpm {}
+
+# What we want to serve on the HTTP/HTTPS ports?
+server:
+  # The domain we want to serve our services on
+  myapi.org, myapi.local:
+    # Pattern based routing to each service
+    router:
+      - assets.myapi.org/: assets
+      - my-api.myapi.org/: my-api
+
+# Additional hosts we want to map apart from the top-level domain
+hosts:
+  - assets.myapi.local
+  - my-api.myapi.local

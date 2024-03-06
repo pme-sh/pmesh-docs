@@ -1,0 +1,221 @@
+---
+title: Manifest Fields
+sidebar:
+  order: 4
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+Now that we have a basic understanding of the template, let's take a look at the format of the manifest file.
+
+```yaml
+# Root directory of the project
+root: .
+
+# Root directory of the services
+service_root: packages
+
+# A map of services
+services:
+  frontend: !Pnpm
+	 lb:
+		strat: round-robin
+		state: none
+		404:
+		  limit: 1/s block_after=2/s block_for=10m
+		  handle:
+			 - log "hi"
+	 cluster: 50%
+	 monitor:
+		test:
+		  "front-page-test": GET / 200
+  cdn: !FS
+	 path: ./static
+
+# A map of virtual hosts
+server:
+  example.com, example.local:
+	 router:
+		- example.com/static/: cdn
+		- example.com/: frontend
+
+# IP information provider
+ipinfo:
+  disable: false
+  maxmind: "123456"
+  mark:
+	 - "Cloudflare"
+
+# A map of environment variables
+env:
+  MY_ENV: "hello"
+
+# A map of runners
+runners:
+  webhook.:
+    content: http
+    route:
+      - frontend
+
+# The JetStream configuration
+jet:
+  obj:
+	 myobj:
+	 	Description: "My Object store"
+  streams:
+	 mystream:
+	 	stream:
+			Name: "My Stream"
+			Subjects: ["test.*"]
+			MaxAge: 1h
+			MaxBytes: 1GB
+		consumers:
+			myconsumer:
+				Durable: true
+				Deliver: all
+				AckPolicy: explicit
+				MaxAckPending: 100
+  kv:
+	 mykv:
+		Description: "My KV"
+		TTL: 1h
+		Storage: file
+		Compression: true
+
+# A list of hostname to IP mapping
+host:
+  - api.test.local
+
+# The path to custom error pages
+custom_errors: ./errors
+```
+
+We'll explore some of these fields in detail in the following sections. But for now let's go through the basics of each field.
+
+## Root and Service Root
+
+The `root` field is the root directory of the project, any relative paths in the manifest file are resolved relative to this directory.
+The `service_root` field is the root directory of the services, as such if you have the following structure:
+
+```yaml
+root: ./a
+service_root: b
+```
+
+A service with the name `c` will be expected to reside under `./a/b/c`.
+
+## Services
+
+The `services` field is a map of services, where the key is the name of the service and the value is the service configuration.
+The configuration differs based on the type of service, but the common structure is as follows:
+
+```yaml
+services:
+  # Service name
+  frontend: !Pnpm # Service type
+    # Service configuration, differs based on the service type
+    lb:
+      strat: round-robin
+      state: none
+      404:
+        limit: 1/s block_after=2/s block_for=10m
+        handle:
+          - log "hi"
+    cluster: 50%
+    monitor:
+      test:
+        "front-page-test": GET / 200
+   cdn: !FS
+     path: ./static
+```
+
+## Virtual Hosts
+
+The `server` field is a map of virtual hosts, where the key is the name of the virtual host and the value is the virtual host configuration.
+You may use a comma separated list of hostnames to define multiple hostnames for a single virtual host.
+
+Currently the configuration supported is as follows:
+
+- `no_upgrade` - Disable automatic HTTPS upgrade (`Upgrade-Insecure-Requests: 1`)
+- `router` - A list of routers to use for the virtual host
+
+It is very minimal since the more complex configurations are defined in the routers themselves, which we will cover in the following sections.
+
+```yaml
+server:
+  # Virtual host name
+  example.com, example.local:
+    no_upgrade: true # Disable automatic HTTPS upgrade
+    router:
+      - ...
+      - ...
+```
+
+## Runners
+
+The `runners` field is a map of runners, where the key is the topic it subscribes to and the value is the runner configuration.
+
+- `route` - The router to use for the task, same as the virtual host router
+- `content` - The content type for the task, e.g. `application/json` or the special `http` for request representation
+- `method` - The HTTP method for the task, e.g. `GET` or `POST`
+- `schedule` - The schedule for the task
+- `timeout` - The timeout for the task
+- `nak_delay` - The delay before NAKing a message
+- `rate` - The rate limit for the task
+- `serial` - Whether to process messages serially
+- `oneshot` - Whether to terminate after the first message
+- `no_meta` - Whether to include metadata in the request
+- `verbose` - Whether to log verbose messages
+
+We will cover the details of this in the runners section.
+
+## JetStream Configuration
+
+The `jet` field is the JetStream configuration, which lets you define the JetStream objects you want available in the server.
+
+- `streams` - A map of JetStream streams and their consumers
+- `kv` - A map of JetStream key-value stores
+- `obj` - A map of JetStream object stores
+
+For more details on this please refer to the JetStream documentation.
+
+## Hosts
+
+If you use `example.local` in the manifest, it will be automatically inserted into the hosts file, but the same is not true for the subdomains,
+as wildcards are not supported in the hosts file.
+
+The `hosts` field is used to assist you in this regard, where you can define a list of hostname to IP mapping, that will be inserted into the hosts file similar to the `example.local` entry.
+
+```yaml
+hosts:
+  - api.test.local: 123.123.123.123
+  - env.test.local # This will map to 127.0.0.1 implicitly if no IP is provided
+```
+
+## Environment Variables
+
+The `env` field is a map of environment variables, where the key is the name of the environment variable and the value is the value of the environment variable.
+
+```yaml
+env:
+  MY_ENV: "hello"
+```
+
+This will set the environment variable `MY_ENV` to `hello` for every child process.
+
+## IP Information Provider
+
+The `ipinfo` field is used to define the IP information provider, which is used to resolve the details of incoming requests.
+
+- `disable` - Whether to disable the IP information provider
+- `maxmind` - The MaxMind license key to use
+- `mark` - A list of ASN names to mark specially
+
+## Custom Error Pages
+
+The `custom_errors` field is used to define the path (relative to the root) to custom error pages, which will be used instead of the default error pages.
+The files supported are `4xx.html`, `5xx.html` and `internal.html` for pmesh internal errors.
+
+```yaml
+custom_errors: ./errors
+```

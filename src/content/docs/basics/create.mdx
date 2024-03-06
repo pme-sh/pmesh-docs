@@ -1,0 +1,67 @@
+---
+title: Create a new project
+sidebar:
+  order: 2
+---
+
+The `pmesh create` command is used to create a new pmesh project by initializing a `pm3.yml` file in the current directory based on the files nearby.
+However you can also do this manually by creating a `pm3.yml` file with your own settings.
+
+## Usage
+
+import { Tabs, TabItem, FileTree, Code } from "@astrojs/starlight/components";
+
+For the sake of demonstration, let's create a simple Fastify app and use pmesh to serve it.
+Generally you start with a monorepo structure where a directory has subdirectories for each service, assets, whatever it may be.
+
+In this example, we have a directory called `my-api` which contains a Fastify app and a `hi.txt` file in the `assets` directory.
+
+<FileTree>
+
+- assets
+  - hi.txt
+- my-api
+  - app.ts
+  - package.json
+
+</FileTree>
+
+import appts from "/src/demo/my-api/app.ts?raw";
+
+<Code code={appts} lang="ts" title="my-api/app.ts" />
+
+import packagejson from "/src/demo/my-api/package.json?raw";
+
+<Code code={packagejson} lang="json" title="my-api/package.json" />
+
+Let's run `pmesh create` to create a new pmesh project.
+By default it will infer the type of wrapper to use based on the files in the directory but you can always choose Skip if you want to do it manually later.
+
+<script
+	async
+	id="asciicast-hr83btEL8y2ntAGFK4mlBxNbG"
+	src="https://asciinema.org/a/hr83btEL8y2ntAGFK4mlBxNbG.js"
+></script>
+
+Here's the generated `pm3.yml` file.
+
+import pm3yml from "/src/demo/pm3.yml?raw";
+
+<Code code={pm3yml} lang="yaml" title="pm3.yml" />
+
+You can now run `pmesh go` to start the server and confirm everything works:
+
+```sh
+# Start the server
+> pmesh go &
+
+# Test our app and shutdown
+> curl my-api.myapi.local
+{"hello":"world"}
+> curl assets.myapi.local/hi.txt
+hello
+> pmesh shutdown
+```
+
+Note that we did not have to `pnpm install`, build anything, or go through any other setup steps. pmesh automatically does this for you based on the directives in the `pm3.yml` file, neither will your team members or the CI/CD pipeline
+you will no longer need, or the server you deploy to.

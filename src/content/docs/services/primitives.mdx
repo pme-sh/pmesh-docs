@@ -1,0 +1,315 @@
+---
+title: Primitive Types
+sidebar:
+  order: 1
+---
+
+The three muskeeters of pmesh are `FS`, `Proxy`, and `App`. These are the primitive types that are used to build the simpler variants such as `Npm`.
+
+- The `FS` service is a file server that serves static files from the filesystem.
+- The `Proxy` service is a reverse proxy that forwards requests to a set of upstream servers.
+- The `App` service is a long-running process that is managed by pmesh.
+
+## Filesystem
+
+The `FS` service defines a file server that serves static files from the filesystem. The main use case being serving static files such as images, CSS, and JavaScript files.
+
+```yaml
+myfs: !FS
+  path: .
+  dynamic: false
+  immutable: false
+  no_immutable_match: false
+  index: /index.html
+  match: ^.*$
+  404: /404.html
+```
+
+### `path`
+
+- **Type**: `string`
+- **Default**: `.`
+
+The `path` field is the path to serve and it is parsed relative to the service directory.
+
+### `dynamic`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+The `dynamic` field determines if the fileserver will serve files directly from the filesystem instead of in-memory.
+
+We generally recommend keeping it as is, as in production we generally serve large files from a CDN or a object storage service,
+and the small files are assets of the frontend, which take up very little memory.
+
+Static files are also pre-compressed with `brotli` in-memory and served with the `Content-Encoding` if the client supports it.
+
+### `immutable`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+The `immutable` field is a boolean that determines if the fileserver will assume the files are immutable and set cache headers accordingly.
+
+### `no_immutable_match`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+The `no_immutable_match` field is a boolean that determines if the fileserver will not assume the files are immutable if the path contains /immutable/.
+
+This is mainly added to support the many modern frontend frameworks that use Vite, Snowpack, or Webpack, which use the `/immutable/` path to serve immutable files with a hash in the filename.
+
+### `index`
+
+- **Type**: `string`
+- **Default**: `/index.html`
+
+The `index` field is the index file to serve if the path is a directory. If not set, the fileserver will handle it as a not-found scenario.
+
+### `match`
+
+- **Type**: `regexp?`
+- **Default**: `none`
+
+The `match` field is the pattern to match. If not set, the fileserver will serve all files in the directory.
+
+### `404`
+
+- **Type**: `string`
+- **Default**: `none`
+
+The `404` field is the path to the static file to serve for 404 errors, or 'default' to use the default 404 page as dictated by the error renderer.
+
+:::danger[Not found vs Not matched]
+Note that if this field is not set, the fileserver will never return a 404 error.
+Instead, it will treat it as a not-matched scenario, and continue iteration through the router to find a matching service.
+
+To display the default 404 page as dictated by the error renderer, you can set the `404` field to `default`.
+:::
+
+## Proxy
+
+The `Proxy` service is a reverse proxy that forwards requests to a set of upstream servers.
+
+```yaml
+myproxy: !Proxy
+  upstreams:
+	 - http://localhost:8080
+	 - http://localhost:8081
+```
+
+### `monitor` and `lb`
+
+The `monitor` and `lb` fields are used to define the health monitor and load balancer for the proxy service, respectively.
+Since we will cover each of these in the `Load Balancer` section, for the sake of brevity, we will skip them here.
+
+### `upstreams`
+
+- **Type**: `[]string | string`
+- **Default**: `none`
+
+The `upstreams` field is a list of upstream servers to forward requests to. It can be a single string or a list of strings.
+
+## App
+
+The `App` service describes any long-running process that is managed by pmesh. This can be a web server or even a database.
+Since every other service is built on top of the `App` service, it is the most complex of the three primitive types with a lot of configuration options.
+
+```yaml
+myapp: !App
+  root: .
+  run: npm start
+  build: npm run build
+  shutdown: npm stop
+  cluster: 10%
+  cluster_min: 1
+  env:
+	 MY_ENV: production
+  env_host: HOST
+  env_port: PORT
+  env_listen: LISTEN
+  ready_timeout: 10s
+  stop_timeout: 10s
+  no_build_control: false
+  background: false
+  log: app.log
+  unhealthy_timeout: 10s
+  slow_start: false
+  max_memory: 0
+  auto_scale: false
+  auto_scale_streak: 3
+  auto_scale_defer: 10s
+  upscale_percent: 80
+  downscale_percent: 20
+```
+
+### `monitor` and `lb`
+
+The `monitor` and `lb` fields are used to define the health monitor and load balancer for the proxy service, respectively.
+Since we will cover each of these in the `Load Balancer` section, for the sake of brevity, we will skip them here.
+
+### `root`
+
+- **Type**: `string`
+- **Default**: `.`
+
+The `root` field is the root directory of the app. It is parsed relative to the service directory.
+
+### `run`
+
+- **Type**: `command`
+- **Default**: `none`
+
+The `run` field is the command to run the app, which can be a string, or an command object.
+
+```yaml
+run: @.src/ ENV=X node index.js
+```
+
+Which is equivalent to:
+
+```yaml
+run:
+  cwd: .src/
+  exec: node
+  args: [index.js]
+  env:
+	 ENV: X
+```
+
+### `build`
+
+- **Type**: `command | []command`
+- **Default**: `none`
+
+The `build` field is the command to build the app, which can be empty, one command, or a list of commands.
+
+### `shutdown`
+
+- **Type**: `command | []command`
+- **Default**: `none`
+
+The `shutdown` field is the command to shutdown the app, which can be empty, one command, or a list of commands.
+
+### `cluster`
+
+- **Type**: `string`
+- **Default**: `none`
+
+The `cluster` field is the number of instances to run. It can be a number or a percentage of the available CPU cores.
+
+### `cluster_min`
+
+- **Type**: `string`
+- **Default**: `none`
+
+The `cluster_min` field is the minimum number of instances to run. It can be a number or a percentage of the available CPU cores.
+
+### `env`
+
+- **Type**: `string -> string`
+- **Default**: `none`
+
+The `env` field is a map of environment variables to set.
+
+### `env_host` and `env_port`, `env_listen`
+
+- **Type**: `string`
+- **Default**: `HOST`, `PORT`, `LISTEN`
+
+These fields are the environment variables set to inform the app of the host, port, and listen address it should bind to, for the requests to be successfully proxied to it.
+
+### `ready_timeout`
+
+- **Type**: `duration`
+- **Default**: `30s`
+
+The `ready_timeout` field is the timeout for the app to become ready (as determined by the health monitor).
+If the app does not become ready within this time, it is considered unhealthy and killed.
+
+### `stop_timeout`
+
+- **Type**: `duration`
+- **Default**: `10s`
+
+The `stop_timeout` field is the timeout for the app to stop. If the app does not stop after this time of being sent a SIGINT/SIGTERM, it is killed.
+This is used to ensure that the app stops gracefully and is not killed abruptly.
+
+### `no_build_control`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+The `no_build_control` field is a boolean that determines if linking logic between `.run` and `.build` will be disabled.
+
+### `background`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+If this field is set to `true`, the app is not a HTTP server, and will be considered an auxiliary service without an upstream defined.
+
+### `log`
+
+- **Type**: `string`
+- **Default**: `<name>.log`
+
+The `log` field is the log file for stdout&stderr. If not set, it defaults to `<name>.log`.
+
+### `unhealthy_timeout`
+
+- **Type**: `duration`
+- **Default**: `10s`
+
+The `unhealthy_timeout` field is the timeout after which an unhealthy instance is killed.
+
+### `slow_start`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+If this field is set to `true`, instances are started one by one instead of all at once by the cluster manager.
+
+### `max_memory`
+
+- **Type**: `size?`
+- **Default**: `none`
+
+The `max_memory` field is the maximum amount of memory the process is allowed to use. If the process exceeds this limit, it is killed.
+
+### `auto_scale`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+If this field is set to `true`, the app will be auto-scaled based on the CPU usage instead of launching a fixed number of instances.
+
+### `auto_scale_streak`
+
+- **Type**: `int`
+- **Default**: `30`
+
+The `auto_scale_streak` field is the number of consecutive ticks to trigger auto-scaling, which is used to prevent constant scaling up and down.
+If the CPU usage is above the `upscale_percent` for this many ticks, the app will be auto-scaled up, and if it is below the `downscale_percent` for this many ticks, the app will be auto-scaled down.
+
+### `auto_scale_defer`
+
+- **Type**: `duration`
+- **Default**: `30s`
+
+The `auto_scale_defer` field is the time to wait until considering a process in auto-scaling, this is used to prevent scaling up based on the initial high CPU usage when the process is started.
+
+### `upscale_percent`
+
+- **Type**: `float`
+- **Default**: `0.8`
+
+The `upscale_percent` field is the percentage of one-core CPU usage to trigger upscale.
+
+### `downscale_percent`
+
+- **Type**: `float`
+- **Default**: `0.02`
+
+The `downscale_percent` field is the percentage of one-core CPU usage to trigger downscale.
