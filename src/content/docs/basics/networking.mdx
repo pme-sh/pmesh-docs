@@ -1,0 +1,74 @@
+---
+title: Networking and security
+sidebar:
+  order: 2
+---
+
+By default, pmesh will bind to three ports: 80, 443 and 8443, which you will need to allow in your firewall if you want outside traffic to reach your pmesh node.
+The first two are used for HTTP and HTTPS traffic, and the third is used for internal communication between pmesh nodes.
+
+Each of the ports are configurable, as well as the ip address to bind to, using the following command line options:
+
+- `--http N`, default 80
+- `--https N`, default 443
+- `--internal N`, default 8443
+- `--bind IP`, default 0.0.0.0
+
+## Security against IP scanning
+
+Unlike many other reverse proxies, pmesh will never respond to requests if the client does not specify a hostname, either in the `Host` header or in the `SNI` field of the TLS handshake.
+
+This means that if you scan the IP address of a pmesh node, you will not get any response, unless you know the hostname of the service you are trying to reach.
+
+```bash
+$ curl -v -k https://127.0.0.1
+*   Trying 127.0.0.1:443...
+* Connected to 127.0.0.1 (127.0.0.1) port 443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* TLSv1.0 (OUT), TLS header, Certificate Status (22):
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.0 (OUT), TLS header, Unknown (21):
+* TLSv1.3 (OUT), TLS alert, decode error (562):
+* error:0A000126:SSL routines::unexpected eof while reading
+* Closing connection 0
+curl: (35) error:0A000126:SSL routines::unexpected eof while reading
+```
+
+```bash
+$ curl -v -k http://127.0.0.1
+*   Trying 127.0.0.1:80...
+* Connected to 127.0.0.1 (127.0.0.1) port 80 (#0)
+> GET / HTTP/1.1
+> Host: 127.0.0.1
+> User-Agent: curl/7.81.0
+> Accept: */*
+>
+* Empty reply from server
+* Closing connection 0
+curl: (52) Empty reply from server
+```
+
+## Authentication
+
+As for the internal communication between pmesh nodes, it is secured by a shared secret. This secret is generated at the first start of pmesh, and is stored in the `~/.pmesh` directory.
+
+This secret, in turn, is used to reproducably generate the same TLS certificate on each node, which then issues
+two certificates for internal communication:
+
+- a client certificate, which is used to authenticate that requests are coming from an authorized client
+- a server certificate, which is used to authenticate that requests are going to a trusted server
+
+Both parties will verify each other's certificate, and only if both are valid, the connection will be established, if not the connection will be dropped.
+
+## TCP Optimizations
+
+A common issue you run into with reverse proxies under very high load is that they will run out of ephemeral ports, as they are limited to 32k or sometimes 48k ports depending on your kernel configuration.
+
+To mitigate this, pmesh will use an additional optimization on top of connection pooling: which is to use a subnet of loopback addresses
+as the client address instead of just `127.0.0.1` controlled by the following options:
+
+- `--subnet-dialer`, default `127.2.0.0/16`
+- `--subnet-service`, default `127.1.0.0/16`
+
+This allows you to have up to `2^31` connections to the same backend, which is essentially unlimited as opposed to just 32k.
