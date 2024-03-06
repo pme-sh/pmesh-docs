@@ -25,7 +25,7 @@ export default defineConfig({
 				},
 			],
 			editLink: {
-				baseUrl: "https://github.com/pme-sh/pmesh-docs",
+				baseUrl: "https://github.com/pme-sh/pmesh-docs/edit/main",
 			},
 			social: {
 				github: "https://github.com/pme-sh/pmesh",
