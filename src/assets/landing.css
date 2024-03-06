@@ -1,8 +1,8 @@
 :root {
 	--overlay-hsl: 339, 60%, 60%;
 	--overlay: hsla(var(--overlay-hsl), 0.2);
-	--sl-color-bg-nav: #0002;
-	--sl-color-bg-sidebar: #0002;
+	--sl-color-bg-nav: #0005;
+	--sl-color-bg-sidebar: #0005;
 }
 
 :root[data-theme="light"] {
@@ -25,6 +25,16 @@
 	--sl-color-bg: #111;
 	--sl-color-text-invert: #fff;
 }
+:root[data-theme="dark"] option {
+	background-color: #000 !important;
+}
+:root[data-theme="dark"] header {
+	box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+	backdrop-filter: blur(5px);
+	-webkit-backdrop-filter: blur(5px);
+	border: 1px solid rgba(19, 19, 19, 0.3);
+}
+
 :root[data-theme="light"] {
 	--sl-color-accent-low: #fdc7c8;
 	--sl-color-accent: #c9003b;
