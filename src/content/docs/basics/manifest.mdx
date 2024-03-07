@@ -1,5 +1,5 @@
 ---
-title: Manifest Fields
+title: Manifest file
 sidebar:
   order: 5
 ---
@@ -53,7 +53,6 @@ env:
 # A map of runners
 runners:
   webhook.:
-    content: http
     route:
       - frontend
 
@@ -154,19 +153,6 @@ server:
 ## Runners
 
 The `runners` field is a map of runners, where the key is the topic it subscribes to and the value is the runner configuration.
-
-- `route` - The router to use for the task, same as the virtual host router
-- `content` - The content type for the task, e.g. `application/json` or the special `http` for request representation
-- `method` - The HTTP method for the task, e.g. `GET` or `POST`
-- `schedule` - The schedule for the task
-- `timeout` - The timeout for the task
-- `nak_delay` - The delay before NAKing a message
-- `rate` - The rate limit for the task
-- `serial` - Whether to process messages serially
-- `oneshot` - Whether to terminate after the first message
-- `no_meta` - Whether to include metadata in the request
-- `verbose` - Whether to log verbose messages
-
 We will cover the details of this in the runners section.
 
 ## JetStream Configuration

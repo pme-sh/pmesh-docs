@@ -1,0 +1,48 @@
+---
+title: NATS and Jetstream
+sidebar:
+  order: 1
+---
+
+Before we get into the details of how to publish and consume messages using pmesh, let's first understand the underlying systems.
+
+## Pub-Sub Messaging
+
+In a pub-sub messaging system, publishers send messages to a topic, and subscribers receive messages from a topic. This is a one-to-many messaging pattern, where a single message can be received by multiple subscribers.
+
+Subject names are used to define the topic, and can be hierarchical, allowing for wildcard subscriptions. For example:
+
+- a subscriber can subscribe to `foo.*` and receive messages from `foo.bar` and `foo.baz`.
+- a subscriber can subscribe to `foo.>` and receive messages from `foo.bar`, `foo.baz`, and `foo.bar.baz`.
+
+## NATS
+
+[NATS](https://nats.io/) is a simple, secure, and high-performance open source messaging system for cloud native applications, IoT messaging, and microservices architectures; deployed in some of the largest cloud platforms, including: VMware, CloudFoundry, Baidu, Siemens, and GE.
+
+<center>
+	<img src="/src/assets/nats_perf.png" alt="NATS" width="70%" />
+</center>
+
+NATS provides a number of messaging patterns:
+
+- **Publish-Subscribe**: A publisher sends a message to a subject, and all subscribers to that subject receive the message. NATS supports wildcard subscriptions, so a subscriber can receive messages from multiple subjects using a single subscription.
+- **Request-Reply**: A client sends publishes a message with a reply subject, and a subscriber can respond to the message by publishing a message to the reply subject.
+- **Distributed Queueing**: A group of subscribers can be created to consume messages from a subject, where instead of 1:N fanout, messages are distributed in a load-balanced fashion to the subscribers.
+
+NATS by itself however is not durable, and does not provide any persistence guarantees. It is a simple, fast, and lightweight messaging system.
+
+## Jetstream
+
+[Jetstream](https://docs.nats.io/jetstream/concepts) is a durable, high-performance, message broker that adds persistence, replication, and message delivery guarantees to NATS.
+
+A stream is a durable, append-only log of messages. It can be configured with a retention policy, and can be replicated across multiple servers for high availability.
+When a message is published to a subject that a stream is subscribed to, it will store the message for later consumption, and respond with a message containing the sequence number of the message in the log and the stream name.
+
+A consumer is a stateful view of a stream acting as an interface for clients to consume messages from a stream.
+It will track which messages were delivered and acknowledged by clients, and can provide an at-least-once delivery guarantee, unlike core NATS which provides an at-most-once delivery guarantee.
+
+Durable consumers, which are created with an explicit name, will persist their state across restarts, and can be used to deliver to a group of clients in an exactly-once fashion.
+
+<center>
+	<img src="/src/assets/jet.png" alt="Jetstream" width="900%" />
+</center>

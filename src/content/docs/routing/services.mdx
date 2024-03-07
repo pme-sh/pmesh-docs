@@ -20,7 +20,7 @@ site.com, site.local:
 
 ## Beacons and publishing
 
-The alternative to forwarding the request to a service direclty is to use `beacon` and `publish` directives.
+The alternative to forwarding the request to a service directly is to use the `beacon` and `publish` directives.
 This will instead send a message to the message broker, which can be picked up by a runner, as we will be exploring later.
 
 ```yaml
@@ -35,7 +35,7 @@ site.com, site.local:
 The main difference between `beacon` and `publish` is that:
 
 - a `beacon` is a fire-and-forget message with no delivery guarantee.
-- a `publish` is a message that MUST deliver before the request is completed.
+- a `publish` on the other hand will make sure the message is delivered before returning a response to the client.
 
 The `event.site.com` route above will publish to the `webhooks.event` topic and make sure it is delivered before returning a `200 OK` response to the client.
 

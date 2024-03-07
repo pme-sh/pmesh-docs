@@ -50,8 +50,8 @@ export default defineConfig({
 					autogenerate: { directory: "lb" },
 				},
 				{
-					label: "Runners (TBD)",
-					autogenerate: { directory: "run" },
+					label: "Messaging and Runners",
+					autogenerate: { directory: "runners" },
 				},
 				{
 					label: "Runtime API (TBD)",

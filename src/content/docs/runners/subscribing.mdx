@@ -1,0 +1,76 @@
+---
+title: Subscribing to a topic
+sidebar:
+  order: 3
+---
+
+Aside from the implicitly defined runners, we can also define our own subscribers in the manifest file.
+
+```yaml title="pm3.yaml"
+runners:
+  # The topic
+  greet.:
+    # Routing of the message
+    route:
+      - my-api
+    # Configuration of the subscriber
+    no_dead_letter: false
+    rate: 1/s
+    # Scheduled runs
+    schedule:
+      - interval: 1s
+        topic: greet.hi
+        payload: { "name": "John" }
+```
+
+## Route configuration | `route`
+
+- **Type**: [`Mux`](/routing/mux)
+
+The `route` field is used to define the routing of the message. It can contain essentially anything the HTTP router can.
+
+## Subscriber configuration
+
+### `no_dead_letter`
+
+- **Type**: `boolean`
+- **Default**: `false`
+
+If set to `true`, the service will not save the error message to the dead letter queue for durable messages.
+
+### `rate`
+
+- **Type**: `string?`
+- **Default**: `none`
+
+The rate limiter for the runner. It can be set to a number followed by a unit, such as `1/s`, `h`, etc.
+Beyond this limit, the runner will stop polling for messages, and will resume after the rate limit is reset.
+
+### `schedule`
+
+- **Type**: `{ interval: string, topic: string, payload: any }[]`
+- **Default**: `none`
+
+The schedule for the runner. It can be set to a list of objects, each containing an `interval`, `topic`, and `payload` field.
+The `interval` field is a string that represents the interval of the schedule, and the `topic` and `payload` fields are the topic and payload to be sent to the runner.
+
+When multiple nodes are running, the schedule will not be duplicated, instead one node will be responsible for scheduling the tick, by acquiring a distributed lock, and release it after the tick.
+
+## Responses
+
+Any response returned from the HTTP endpoint will be the response sent to the NATS server, including the headers.
+The status code, will be set as a header, `Status`, and the body will be sent as the payload.
+
+For handling errors, 4xx excluding 404 will be considered aborting client errors (since 404 means the subscription is faulty), and 5xx will be considered retriable server errors.
+
+For a comprehensive explanation of how each response is handled, you can refer to the table below.
+
+| Response            | Jetstream                | Core NATS  |
+| ------------------- | ------------------------ | ---------- |
+| Empty 2xx, 202, 204 | Not saved                | Body sent  |
+| 2xx with body       | Saves the result         | Body sent  |
+| 4xx, except 404     | Saves the error<b>\*</b> | Error sent |
+| 404                 | Retry                    | Error sent |
+| 5xx                 | Retry                    | Error sent |
+
+\* Unless `no_dead_letter` is set to `true` in the service's configuration.

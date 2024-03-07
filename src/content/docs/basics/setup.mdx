@@ -1,5 +1,5 @@
 ---
-title: Prepare the server
+title: Setting up the server
 sidebar:
   order: 1
 ---
@@ -47,7 +47,8 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
 ## Under the hood
 
 The configuration you provide is used to setup the NATS cluster which are typically quite a bit more [cumbersome](https://docs.nats.io/running-a-nats-service/configuration/clustering/jetstream_clustering).
-For starters, NATS will reject to run a cluster of size one or two, and will not tolerate any fault in the network until you have at least three nodes.
+For starters, NATS will reject to run a cluster of size one, meaning if you want to scale to two servers, you will need to take down the first server to join the second one.
+It will also not tolerate any fault in the network until you have at least three nodes, so if your second server goes down, you are now offline.
 
 To take care of this, pmesh uses a fork of the project with the necessary changes to make it work out of the box.
 Additionally, the NATS configuration is generated automatically, placing the servers nearby in the same cluster, and connecting the rest using supercluster gateways.
