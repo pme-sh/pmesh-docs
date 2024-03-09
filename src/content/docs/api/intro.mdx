@@ -1,0 +1,130 @@
+---
+title: Introduction
+sidebar:
+  order: 1
+---
+
+The pmesh server exposes a special virtual host `pm3` that can be used to access the internal API of pmesh.
+
+Apart from a few special endpoints, most of the endpoints under the `pm3` can be accessed either through HTTP or Websockets with JSON RPC.
+They accept parameters as JSON objects in the body of the request, and the response will also always be a JSON object.
+
+If performance is a concern, we recommend using Websockets as it can handle around twice the requests.
+
+```js
+// HTTP
+await (await fetch('http://pm3/ping')).json()
+=> 'myhostname'
+
+// Websockets
+const ws = new WebSocket('ws://pm3/connect')
+ws.onmessage = (e) => console.log(JSON.parse(e.data))
+ws.send(JSON.stringify({ id: 1, method: '/ping', params: [] }))
+=> { id: 1, result: 'myhostname', error: null }
+ws.send(JSON.stringify({ id: 2, method: 'POST /ping', params: [] }))
+=> { id: 2, result: 'myhostname', error: null }
+```
+
+Additionally, for debugging purposes, you can add the query parameter `?pretty` to the URL to get a pretty-printed JSON response where applicable.
+
+## Authentication
+
+Any connection coming to the pmesh HTTP/HTTPS server will either be considered `Internal`, or `External`.
+Internal connections are the ones that are able to access privileged resources, such as the `pm3` host or any endpoint marked internal by you using the [internal](/routing/directives/#internal) directive.
+
+The classification of a client connection is done via a simple set of rules:
+
+1. If the connection comes from a loopback address (127.0.0.0/8), it is considered `Internal`. For this reason, you should never put pmesh behind another reverse proxy.
+   But if you really have to, the proxy should **ALWAYS** set the `X-Forwarded-For` header to the original client IP address.
+2. Next, if the connection comes from a secure connection (HTTPS), and the SNI is `pm3`, the client certificate is checked. If the certificate can be verified and is issued by the pmesh Internal CA, it is considered `Internal`.
+3. Otherwise, the connection is considered `External`.
+
+If your server wants to make a request to another server on the network, it will be using the hop endpoints which will handle the TLS and authentication; meaning you will generally use local `http://pm3/...` for everything, including requests to other servers on the mesh.
+
+## Non-confirming Endpoints
+
+:::note
+This section is about the special endpoints that do not conform to the standard RPC protocol.
+The headers and the method may be significant, and the response may be in a different format than the rest of the API.
+:::
+
+### Hop | `/hop`
+
+The hop endpoint is a special endpoint that is used to make requests to other servers on the mesh network.
+It is used to handle the authentication and IP resolution for the server you are trying to reach.
+
+The hop endpoint is available at `http://pm3/hop/:peer/:host/:path` where:
+
+- `:peer` is the name or the machine ID of the server you want to reach.
+- `:host` is the hostname of the original request.
+- `:path` is the path as is.
+
+For demonstration, let's make a request to the `/ping` again, but this time through the hop endpoint.
+
+```js
+await (await fetch('http://pm3/hop/myhostname/pm3/ping')).json()
+=> 'myhostname'
+```
+
+### NATS Monitoring | `/nats`
+
+While not being a part of the pmesh API, the NATS monitoring endpoint is also available under the `pm3` host.
+You can access the NATS monitoring endpoint at `http://pm3/nats/...` to get the current state of the NATS server.
+
+To get more information, you can refer to the [NATS documentation](https://docs.nats.io/running-a-nats-service/nats_admin/monitoring).
+
+### Go pprof | `/debug/pprof`
+
+The pprof endpoint is a special endpoint that is used to get the runtime profiling information of the pmesh server.
+It is available at `http://pm3/debug/pprof/...` and is used for debugging purposes.
+
+### Log tailing | `/tail`
+
+The tail endpoint is a special endpoint that is used to get the logs of the pmesh server.
+Instead of an RPC endpoint, it is a streaming endpoint that sends the logs as they are generated in `application/stream+json` format.
+
+The argument to the tail endpoint is a JSON object with the following properties:
+
+| Property     | Type     | Description                    |
+| ------------ | -------- | ------------------------------ |
+| `domain`     | string   | Domain to filter logs in       |
+| `level`      | string   | Level filter                   |
+| `after`      | datetime | Time filter                    |
+| `before`     | datetime | Time filter                    |
+| `substr`     | string   | Substring filter               |
+| `line_limit` | int      | Max lines to emit from history |
+| `io_limit`   | int      | Max bytes to read in history   |
+| `follow`     | bool     | Follow logs in real time       |
+
+### Header debugging | `/debug/headers`
+
+The header debugging endpoint is a special endpoint that is used to get the headers of the request as they are received by the pmesh server at the specific point in the routing process.
+
+The return value is a text response with the details of the request.
+
+```bash
+$ curl http://pm3/debug/headers -H "X-Test: 1"
+GET /debug/headers
+User-Agent: [curl/8.4.0]
+Accept: [*/*]
+P-Asn: [AS0 Local]
+X-Ray: [0057b2440ed282da-MYH]
+X-Forwarded-Proto: [http]
+P-Internal: [1]
+P-Ip: [127.0.0.1]
+P-Ip-Geo: [XX]
+X-Test: [1]
+
+```
+
+### Lambda API | `/lambda`
+
+import { LinkCard } from "@astrojs/starlight/components";
+
+Lambda APIs are special endpoints used to make a service function or closure universally addressable and invocable.
+
+<LinkCard
+	title="Lambda API"
+	description="Lambdas are universally addressable and invocable functions registered from within a service, to learn more, click here."
+	href="/api/lambda/"
+/>

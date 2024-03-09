@@ -1,0 +1,69 @@
+---
+title: Auxiliary Functionality
+sidebar:
+  order: 6
+---
+
+The API exposes various endpoints for performing auxiliary operations, such as signing URLs and retrieving information about IP addresses.
+
+## Sign URL | `/sign`
+
+| Parameter | Type                 | Description                                                    |
+| --------- | -------------------- | -------------------------------------------------------------- |
+| `url`     | `string`             | Arbitrary URL the request should match to be considered valid. |
+| `expires` | `datetime?`          | The expiration time of the signed URL.                         |
+| `headers` | `map[string]string?` | Headers required to pass verification.                         |
+| `secrets` | `map[string]string?` | Headers set after verification.                                |
+| `rewrite` | `string?`            | Internal route used after verification.                        |
+
+Generates a signed URL based on provided parameters, including optional headers and expiration time.
+Once verified, signed URLs will enable access to [internal](/api/intro/#authentication) resources, so it is important to keep the router associated direct and secure.
+
+The result is a string encoded signature that can be used to access the resource. It should be either set as a header `X-PSN` or appended to the URL as a query parameter `psn`.
+
+To demonstrate, let's sign a URL that resolves to our `hi.txt` file. The path in the signed URL is allowed to be any arbitrary path.
+
+```bash
+$ curl http://assets.myapi.local/hi.txt
+hello
+
+$ curl -X POST http://pm3/sign -d "{\"rewrite\":\"http://assets.myapi.local/hi.txt\", \"url\":\"http://myapi.local/get-hi\", \"expires\":\"2025-01-01T00:00:00Z\"}"
+"jANCSmJioBsYg4vPIh4QftuEaDib21onug2K1rHg-PDWLzJb_DLsNFr2WjswQNFnowvbZTAmO2EmAkTXL2I"
+
+$ curl http://myapi.local/get-hi?psn=jANCSmJioBsYg4vPIh4QftuEaDib21onug2K1rHg-PDWLzJb_DLsNFr2WjswQNFnowvbZTAmO2EmAkTXL2I
+hello
+
+$ curl http://myapi.local/get-hi -H "X-PSN: jANCSmJioBsYg4vPIh4QftuEaDib21onug2K1rHg-PDWLzJb_DLsNFr2WjswQNFnowvbZTAmO2EmAkTXL2I"
+hello
+```
+
+## IP Information | `/ipinfo`
+
+Retrieves information about a given IP address, including ASN, description, country, and flags.
+
+The request expects:
+| Parameter | Type | Description |
+| --------- | ---- | ----------- |
+| `ip` | `string` | The IP address to lookup. |
+
+The result is an object with the following structure:
+| Result | Type | Description |
+| ------ | ---- | ----------- |
+| `ip` | `string` | The requested IP address. |
+| `asn` | `uint32` | The Autonomous System Number associated with the IP. |
+| `desc` | `string` | Description of the ASN. |
+| `country` | `string` | The country code where the IP is located. |
+| `flags` | `uint32` | Various flags providing additional information about the IP. |
+
+Example usage:
+
+```bash
+$ curl http://pm3/ipinfo -d '{"ip":"8.8.8.8"}'
+{
+  "ip": "8.8.8.8",
+  "asn": 15169,
+  "desc": "GOOGLE",
+  "country": "US",
+  "flags": 0
+}
+```

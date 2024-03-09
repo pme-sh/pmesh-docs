@@ -1,0 +1,257 @@
+---
+title: Session state
+sidebar:
+  order: 3
+---
+
+pmesh API exposes a set of endpoints that allow you to interact with the current session of the server.
+Session information includes the current git repository of the server, state of the HTTP server, and the current services.
+
+## Project Revision | `/repo`
+
+Returns information about the current git repository of the server.
+
+The result is an object with the following structure:
+| Result | Type | Description |
+| ------- | ---------- | ------------------------- |
+| `sys` | `string` | The version control system. |
+| `ref.branch` | `string` | The current branch. |
+| `ref.hash` | `string` | The current commit hash. |
+| `ref.author` | `string` | The author of the current commit. |
+| `ref.message` | `string` | The message of the current commit. |
+| `remote.branch` | `string` | The current branch of the remote. |
+| `remote.hash` | `string` | The current commit hash of the remote. |
+| `remote.author` | `string` | The author of the current commit of the remote. |
+| `remote.message` | `string` | The message of the current commit of the remote. |
+| `url` | `string` | The URL of the repository. |
+
+```bash
+$ curl http://pm3/repo?pretty
+{
+  "sys": "git",
+  "ref": {
+    "branch": "main",
+    "hash": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "author": "can1357",
+    "message": "..."
+  },
+  "remote": {
+    "branch": "origin/main",
+    "hash": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "author": "can1357",
+    "message": "..."
+  },
+  "url": "git@github.com:pme-sh/pmesh-docs.git"
+}
+```
+
+## Revision update | `/repo/update`
+
+| Parameter    | Type      | Description                                  |
+| ------------ | --------- | -------------------------------------------- |
+| `invalidate` | `boolean` | If `true`, forces a rebuild of all services. |
+
+Updates the current revision of the server to the latest commit of the remote branch, and restarts all services accordingly.
+
+The result is an object with the following structure:
+
+| Result         | Type     | Description                         |
+| -------------- | -------- | ----------------------------------- |
+| `from.branch`  | `string` | The previous branch.                |
+| `from.hash`    | `string` | The previous commit hash.           |
+| `from.author`  | `string` | The author of the previous commit.  |
+| `from.message` | `string` | The message of the previous commit. |
+| `to.branch`    | `string` | The new branch.                     |
+| `to.hash`      | `string` | The new commit hash.                |
+| `to.author`    | `string` | The author of the new commit.       |
+| `to.message`   | `string` | The message of the new commit.      |
+
+```bash
+$ curl http://pm3/repo/update
+{
+  "from": {
+    "branch": "main",
+    "hash": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "author": "can1357",
+    "message": "..."
+  },
+  "to": {
+    "branch": "origin/main",
+    "hash": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "author": "can1357",
+    "message": "..."
+  }
+}
+```
+
+## Reload | `/reload`
+
+| Parameter    | Type      | Description                                  |
+| ------------ | --------- | -------------------------------------------- |
+| `invalidate` | `boolean` | If `true`, forces a rebuild of all services. |
+
+Reads the manifest from the file system and restarts all services accordingly.
+
+```bash
+$ curl http://pm3/reload
+{}
+
+$ curl -X POST http://pm3/reload -d '{"invalidate": true}'
+{}
+```
+
+## Service list | `/service`
+
+Returns a list of services that are currently running mapped to their unique session IDs.
+
+```bash
+$ curl http://pm3/service?pretty
+{
+  "my-api": "23829859410058122",
+  "assets": "23829859410058122",
+}
+```
+
+## Service restart | `/service/restart/?:svc`
+
+| Parameter    | Type      | Description                                  |
+| ------------ | --------- | -------------------------------------------- |
+| `invalidate` | `boolean` | If `true`, forces a rebuild of all services. |
+
+If a service name is provided, restarts the service with the given name. If no service name is provided, restarts all services.
+
+The result is an object with the following structure:
+| Result | Type | Description |
+| ------- | ---------- | ------------------------- |
+| `count` | `number` | The number of services restarted. |
+
+```bash
+$ curl http://pm3/service/restart/my-api
+{ count: 1 }
+```
+
+## Service stop | `/service/stop/?:svc`
+
+If a service name is provided, stops the service with the given name. If no service name is provided, stops all services.
+
+The result is an object with the following structure:
+| Result | Type | Description |
+| ------- | ---------- | ------------------------- |
+| `count` | `number` | The number of services stopped. |
+
+```bash
+$ curl http://pm3/service/stop/my-api
+{ count: 1 }
+```
+
+## Health | `/service/health/?:svc`
+
+If a service name is provided, returns the health of the service with the given name. If no service name is provided, returns the health of all services as an object with the service names as keys.
+
+The result is an object with the following structure:
+| Result | Type | Description |
+| ------- | ---------- | ------------------------- |
+| `status` | `string` | The status of the service. |
+| `healthy` | `number` | The number of healthy processes. |
+| `total` | `number` | The total number of processes. |
+| `err` | `string?` | The error message if the service is unhealthy. |
+
+```bash
+$ curl http://pm3/service/health/my-api?pretty
+{
+  "status": "OK",
+  "healthy": 1,
+  "total": 1
+}
+```
+
+## Metrics | `/service/metrics/?:svc`
+
+If a service name is provided, returns metrics about the service with the given name. If no service name is provided, returns metrics about all services as an object with the service names as keys.
+
+The result is an object with the following structure:
+| Result | Type | Description |
+| ------- | ---------- | ------------------------- |
+| `id` | `string` | The unique session ID of the service. |
+| `type` | `string` | The type of the service. |
+| `server` | `object` | The server information. |
+| `processes` | `array` | The process information. |
+| `status` | `string` | The status of the service. |
+| `healthy` | `number` | The number of healthy processes. |
+| `total` | `number` | The total number of processes. |
+| `err` | `string?` | The error message if the service is unhealthy. |
+
+```bash
+$ curl http://pm3/service/metrics/my-api?pretty
+{
+  "id": "24658195541820102",
+  "type": "app",
+  "server": {
+    "upstreams": [
+      {
+        "address": "127.1.0.2:70",
+        "healthy": true
+      }
+    ]
+  },
+  "processes": [
+    {
+      "pid": 26792,
+      "create_time": "2024-03-09T02:02:52.662+01:00",
+      "cmd": "node app.js",
+      "cpu": 0.000052471819240181423,
+      "rss": 61931520,
+      "vms": 73318400,
+      "hwm": 61931520,
+      "io_read": 2315553,
+      "io_write": 112,
+      "tree": {
+        "26792": {
+          "pid": 26792,
+          "create_time": "2024-03-09T02:02:52.662+01:00",
+          "cmd": "node app.js",
+          "cpu": 0.000052471819240181423,
+          "rss": 61931520,
+          "vms": 73318400,
+          "hwm": 61931520,
+          "io_read": 2315553,
+          "io_write": 112
+        }
+      }
+    }
+  ],
+  "status": "OK",
+  "healthy": 1,
+  "total": 1
+}
+```
+
+## Client sessions | `/session`
+
+Returns information about the current client sessions.
+
+The result is an object with the following structure:
+
+| Result                       | Type     | Description                           |
+| ---------------------------- | -------- | ------------------------------------- |
+| `num_clients`                | `number` | The number of clients.                |
+| `sessions[ip].avg_rps`       | `number` | The average requests per second.      |
+| `sessions[ip].num_reqs`      | `number` | The number of requests.               |
+| `sessions[ip].first_seen`    | `string` | The time the client was first seen.   |
+| `sessions[ip].blocked_until` | `string` | The time the client is blocked until. |
+
+```bash
+$ curl http://pm3/session?pretty
+{
+  "num_clients": 68,
+  "sessions": {
+    "xx.xxx.xxx.xx": {
+      "avg_rps": 0.01168477551931604,
+      "num_reqs": 275,
+      "first_seen": "2024-03-08T20:21:43.418Z",
+      "blocked_until": "0001-01-01T00:00:00Z"
+    },
+    ...
+  }
+}
+```

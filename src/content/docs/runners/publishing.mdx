@@ -14,6 +14,7 @@ For convenience, pmesh provides an API to publish messages to the NATS server, a
 The request body and headers are directly forwarded to the NATS server as a message.
 
 Although it will be explored in more detail later, the most simple way of making internal requests to pmesh is via HTTP using the hostname `pm3`.
+This hostname is a special alias that resolves to the pmesh instance's internal IP address, but only authenticates requests from the local network.
 For this endpoint, the full URL would be `http://pm3/publish/topic`.
 
 Since we have a project with a `my-api` service, we can actually start publishing messages and receiving responses right away without defining any runners.
@@ -75,7 +76,7 @@ For each service in the manifest, there is also a corresponding implicit runner 
 
 > Cool, but where's our response?
 
-Once the request is finished, if the message originates from a stream,, pmesh will store the response in a special key-value store, which is also convieniently exposed as an endpoint at `/result/:stream/:seq`.
+Once the request is finished, if the message originates from a stream, pmesh will store the response in a special key-value store, which is also conveniently exposed as an endpoint at `/result/:stream/:seq`.
 
 You can think of what we received earlier as a _promise_.
 

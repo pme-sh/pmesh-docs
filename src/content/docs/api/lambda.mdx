@@ -1,0 +1,155 @@
+---
+title: Lambda API
+sidebar:
+  order: 5
+---
+
+Lambdas are a special construct in pmesh that enable 1:1 communication between services located on different nodes without the facilitation of the message broker.
+
+The ability to create universally accessible and invocable functions is a powerful feature that can be used to create a wide variety of applications.
+
+One such example is push notifications on a web page. By creating a lambda associated with each browser window, the server can send messages directly to the browser without the need for a message broker.
+
+This reduces the responsibility of the message broker to simply storing 16-byte keys which can be used to directly call the handler without the need for retry logic or durable storage.
+
+## Listing local lambdas | `/lambda`
+
+To list all registered lambdas, simply make a GET request to the `/lambda` endpoint.
+The result is a map of all registered lambdas, with the key being the lambda id and the value being the lambda object.
+| Field | Type | Description |
+| --- | --- | --- |
+| id | string | The unique identifier of the lambda |
+| timestamp | string | The time the lambda was created |
+| code | string | The codec of the lambda |
+| headers | map[string][]string | The headers of the lambda registration request |
+
+```bash
+$ curl http://pm3/lambda?pretty
+{
+  "rhowRuuCUoE5vlcA": {
+    "id": "rhowRuuCUoE5vlcA",
+    "timestamp": "2024-03-09T04:38:57.413+01:00",
+    "code": "json-rpc",
+    "headers": {
+      "Connection": [
+        "Upgrade"
+      ],
+      "P-Asn": [
+        "AS0 Local"
+      ],
+      "P-Internal": [
+        "1"
+      ],
+      "P-Ip": [
+        "127.0.0.1"
+      ],
+      "P-Ip-Geo": [
+        "XX"
+      ],
+      "Sec-Websocket-Extensions": [
+        "permessage-deflate; client_max_window_bits"
+      ],
+      "Sec-Websocket-Key": [
+        "mgKWjJUEOA2Fw87w8YC2nQ=="
+      ],
+      "Sec-Websocket-Version": [
+        "13"
+      ],
+      "Upgrade": [
+        "websocket"
+      ],
+      "X-Forwarded-Proto": [
+        "http"
+      ],
+      "X-Ray": [
+        "0057be39815282ea-MYH"
+      ]
+    }
+  }
+}
+```
+
+## Calling a lambda | `/lambda/:id/:method`
+
+To invoke a lambda, we simply call the `/lambda/:id/:method` endpoint with the payload as the request body.
+Response will be the result of the lambda invocation.
+
+```bash
+$ curl -X POST http://pm3/lambda/rhowRuuCUoE5vlcA/test -d "{ \"hello\": \"world\" }"
+{"echo":{"hello":"world"}}
+```
+
+## Creating a Lambda | `/lambda/new/?:id`
+
+To create a new lambda, we need a client capable of Websocket communication.
+The client should connect to the `/lambda/new` endpoint and wait for the `open` message, which contains the lambda id.
+After the lambda is opened, the client will receive messages in the form of JSON-RPC 1.0 requests, which should be responded accordingly.
+
+The ID parameter in the endpoint is only used if the client is re-opening a lambda. If there is no prior identifier, the client should omit this parameter.
+
+You can see an example of the messages exchanged between the client and the server below.
+
+```js
+// pmesh informs the client that the lambda is ready to receive messages and it's UID.
+<- {"method":"open","params":["rhowRuuCUoE5vlcA"],"id":0}
+
+// The client accepts the state and informs the server that it's ready to receive messages.
+-> { id: 0, result: 'ok' }
+
+// pmesh relays a request to the client
+<- {"method":"test","params":[{"hello":"world"}],"id":1}
+
+// The client responds with the result of the request
+-> { id: 1, result: { echo: { hello: 'world' } } }
+```
+
+For a complete implementation of a lambda client using Node.js and the `ws` package, see the example below.
+
+```ts title="lambda.ts"
+import { WebSocket, createWebSocketStream } from "ws";
+
+// Creates a new lambda, returns the ID.
+async function newLambda(handler: Record<string, (body: any) => any>): Promise<string> {
+	// Create a websocket stream to the lambda endpoint
+	const duplex = createWebSocketStream(new WebSocket("ws://pm3/lambda/new"), { encoding: "utf-8" });
+
+	// Define the message handler
+	async function handle(id: any, method: string, body: any) {
+		let resp;
+		try {
+			resp = { id, result: await handler[method](body) };
+		} catch (error) {
+			resp = { id, error: `${error}` };
+		}
+		duplex.write(JSON.stringify(resp));
+	}
+
+	// Return a promise that resolves to the lambda ID when the lambda is opened
+	return new Promise(async (resolve) => {
+		// For each message received:
+		for await (const message of duplex) {
+			const { method, params, id } = JSON.parse(message);
+
+			// A special case for the "open" method, which is sent when the lambda is opened to inform
+			// the client that the lambda is ready to receive messages and it's UID.
+			if (method === "open") {
+				// Accept the state and resolve the promise
+				duplex.write(JSON.stringify({ id, result: "ok" }));
+				resolve(params[0]);
+				continue;
+			}
+
+			// Handle the message
+			handle(id, method, params[0]).catch(console.error);
+		}
+	});
+}
+
+const id = await newLambda({
+	test(body) {
+		return { echo: body };
+	},
+});
+console.log("id", id);
+// id rhowRuuCUoE5vlcA
+```

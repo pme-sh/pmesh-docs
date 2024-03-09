@@ -46,15 +46,15 @@ export default defineConfig({
 					autogenerate: { directory: "services" },
 				},
 				{
-					label: "Load Balancer",
-					autogenerate: { directory: "lb" },
+					label: "HTTP Server",
+					autogenerate: { directory: "http" },
 				},
 				{
 					label: "Messaging and Runners",
 					autogenerate: { directory: "runners" },
 				},
 				{
-					label: "Runtime API (TBD)",
+					label: "Runtime API",
 					autogenerate: { directory: "api" },
 				},
 				{

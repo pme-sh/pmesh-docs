@@ -1,0 +1,97 @@
+---
+title: Persistance layer
+sidebar:
+  order: 4
+---
+
+For convenience, pmesh exposes a simple REST API for interacting with the persistence layer. Allowing you to interact with the key-value store, publish events and requests, and retrieve the results of operations.
+
+## Get Key `GET /kv/:key`
+
+Retrieves the state of a specific key within the session's key-value store.
+
+The result is an object with the following structure:
+| Result | Type | Description |
+|------------|-------------------|-------------------------------|
+| `revision` | `uint64` | The revision number of the key. |
+| `value` | `any` | The value associated with the key. |
+
+```bash
+$ curl http://pm3/kv/exampleKey
+{
+  "revision": 42,
+  "value": 4
+}
+```
+
+## Set Key | `PUT /kv/:key`
+
+Sets or updates the value of a specific key. If `revision` is specified, the update will be conditional on matching the provided revision.
+
+The result is the new revision number of the key.
+
+```bash
+$ curl -X PUT http://pm3/kv/exampleKey -d '{"revision":42, "value": 4}'
+42
+```
+
+## Delete Key | `DELETE /kv/:key`
+
+Deletes a specific key from the key-value store.
+
+```bash
+$ curl -X DELETE http://pm3/kv/exampleKey
+```
+
+## List Keys | `GET /kv`
+
+Retrieves a list of all keys in the key-value store.
+
+The result is an array of key names.
+
+```bash
+$ curl http://pm3/kv
+["exampleKey1", "exampleKey2", ...]
+```
+
+## Atomic Swap | `/kv/:key/cas`
+
+Performs an atomic compare-and-swap operation on a specific key. The operation will succeed if the current value matches the `expected` value, updating it to the `desired` value.
+
+The result is an object with the following structure:
+| Result | Type | Description |
+|------------|-------------------|-----------------------------------|
+| `ok` | `bool` | Whether the operation succeeded. |
+| `diff` | `any` | The difference between expected and actual value in JSON-diff format, if the operation failed. |
+| `revision` | `uint64` | The new revision number of the key, if the operation succeeded. |
+| `value` | `any` | The new value of the key, if the operation succeeded. |
+
+```bash
+$ curl -X POST http://pm3/kv/exampleKey/cas -d '{"expected": 4, "desired": 5}'
+{
+  "ok": true,
+  "diff": "",
+  "revision": 43,
+  "value": 5
+}
+```
+
+## Publish Request | `/publish/:topic`
+
+Publishes an NATS request to a specific topic. The body is the raw event payload and the result is the response from the subscription.
+
+```bash
+$ curl -X POST http://pm3/publish/greet.people -d '{"name": "world"}'
+{"stream":"ev", "seq":5189}
+```
+
+## Retrieve Result | `/result/:stream/:seq`
+
+Fetches the result of a specific operation identified by a stream and sequence number.
+
+The result is the value associated with the operation.
+
+```bash
+$ curl http://pm3/result/exampleStream/42
+{"operationResult":"success"}
+```

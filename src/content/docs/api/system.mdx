@@ -1,0 +1,185 @@
+---
+title: System controls
+sidebar:
+  order: 2
+---
+
+The pmesh API exposes a number of endpoints to manage the state of the server, as well as the entire mesh.
+
+## Ping | `/ping`
+
+Returns a simple `pong` response, with the hostname of this machine.
+
+```bash
+$ curl http://pm3/ping
+"myhostname"
+```
+
+## Shutdown | `/shutdown`
+
+Shuts down the server.
+
+```bash
+$ curl http://pm3/shutdown
+{}
+```
+
+## PMesh Revision | `/version`
+
+Returns information about the current version of the pmesh server.
+The result is a string with the current version.
+
+```bash
+$ curl http://pm3/version?pretty
+"v0.3-122fca54"
+```
+
+## System metrics | `/system`
+
+Returns a map of system metrics.
+
+The result is an object with the following structure:
+| Result | Type | Description |
+| ------- | ---------- | ------------------------- |
+| `machine_id` | `string` | The machine ID. |
+| `cpu[N].cpu` | `number` | The CPU number. |
+| `cpu[N].vendorId` | `string` | The CPU vendor ID. |
+| `cpu[N].family` | `string` | The CPU family. |
+| `cpu[N].model` | `string` | The CPU model. |
+| `cpu[N].stepping` | `number` | The CPU stepping. |
+| `cpu[N].physicalId` | `string` | The CPU physical ID. |
+| `cpu[N].coreId` | `string` | The CPU core ID. |
+| `cpu[N].cores` | `number` | The number of CPU cores. |
+| `cpu[N].modelName` | `string` | The CPU model name. |
+| `cpu[N].mhz` | `number` | The CPU speed in MHz. |
+| `cpu[N].cacheSize` | `number` | The CPU cache size. |
+| `cpu[N].flags` | `array` | The CPU flags. |
+| `cpu[N].microcode` | `string` | The CPU microcode. |
+| `load` | `number` | The system load. |
+| `rx` | `number` | The received network traffic in bytes per second. |
+| `tx` | `number` | The transmitted network traffic in bytes per second. |
+| `freedisk` | `number` | The free disk space in bytes. |
+| `freemem` | `number` | The free memory in bytes. |
+| `totaldisk` | `number` | The total disk space in bytes. |
+| `totalmem` | `number` | The total memory in bytes. |
+| `uptime` | `number` | The system uptime in seconds. |
+| `hostname` | `string` | The hostname of the machine. |
+| `uid` | `string` | The unique machine ID. |
+| `process_count` | `number` | The number of running processes. |
+| `os` | `string` | The operating system. |
+| `kernel_version` | `string` | The kernel version. |
+| `kernel_arch` | `string` | The kernel architecture. |
+| `virtualization_system` | `string` | The virtualization system. |
+| `virtualization_role` | `string` | The virtualization role. |
+| `rtt[mach]` | `number` | The round-trip time to the remote machine, in milliseconds. |
+
+```bash
+$ curl http://pm3/system?pretty
+{
+  "machine_id": "abcd1234",
+  "cpu": {
+    "cpu": 0,
+    "vendorId": "ARM",
+    "family": "",
+    "model": "0xd0c",
+    "stepping": 1,
+    "physicalId": "",
+    "coreId": "4608",
+    "cores": 80,
+    "modelName": "Neoverse-N1",
+    "mhz": 3000,
+    "cacheSize": 0,
+    "flags": [
+      "fp",
+      "asimd",
+      "evtstrm",
+      "aes",
+      "pmull",
+      "sha1",
+      "sha2",
+      "crc32",
+      "atomics",
+      "fphp",
+      "asimdhp",
+      "cpuid",
+      "asimdrdm",
+      "lrcpc",
+      "dcpop",
+      "asimddp",
+      "ssbs"
+    ],
+    "microcode": ""
+  },
+  "load": 0.23767826036767198,
+  "rx": 68946.40320157344,
+  "tx": 358612.36113821046,
+  "freedisk": 1789967761408,
+  "freemem": 159653228544,
+  "totaldisk": 2127283216384,
+  "totalmem": 269258022912,
+  "uptime": 380589,
+  "hostname": "my hostname",
+  "uid": "00000000-0000-4000-8000-123456789abc",
+  "process_count": 786,
+  "os": "linux",
+  "kernel_version": "5.15.0-97-generic",
+  "kernel_arch": "aarch64",
+  "virtualization_system": "",
+  "virtualization_role": "",
+  "rtt": {
+    "abcd1234": 715.439607,
+    "abcd1235": 614.897263,
+    "abcd1236": -1,                               # not reachable
+    "abcd1237": 0.323401,
+    "abcd1238": 737.126561,
+    "abcd1239": 4.650896
+  }
+}
+```
+
+## Peer information | `/peers` & `/peers/alive`
+
+Returns a list of all peers in the mesh, or only those that are currently alive, respectively.
+
+The result is an array of the following object structure:
+| Result | Type | Description |
+| ------- | ---------- | ------------------------- |
+| `machine_id` | `string` | The machine ID. |
+| `host` | `string` | The configured hostname. |
+| `ip` | `string` | Advertised IP address |
+| `lat` | `number` | Latitude of geolocation. |
+| `lon` | `number` | Longitude of geolocation. |
+| `country` | `string` | Geolocated Country |
+| `isp` | `string` | ISP |
+| `heartbeat` | `number` | Timestamp of last heartbeat, milliseconds since epoch. |
+| `distance` | `number` | Distance to this peer, in kilometers. |
+| `ud` | `map[string]any` | User-defined data. |
+| `sd` | `map[string]any` | System-defined data. |
+| `me` | `boolean` | Whether this peer is the local machine. |
+
+```bash
+$ curl http://pm3/peers?pretty
+[
+  {
+    "machine_id": "abcd1234",
+    "host": "myhostname",
+    "ip": "xx.xx.xx.xx",
+    "lat": xx.xxxx,
+    "lon": xx.xxxx,
+    "country": "US",
+    "isp": "XX LTD",
+    "heartbeat": 1709951301935,
+    "me": true,
+    "distance": 0,
+    "ud": {},
+    "sd": {
+      "branch": "main",
+      "commit": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "services": [
+        "assets",
+        "my-api"
+      ]
+    }
+  }
+]
+```
