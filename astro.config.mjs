@@ -58,12 +58,8 @@ export default defineConfig({
 					autogenerate: { directory: "api" },
 				},
 				{
-					label: "CI Internals (TBD)",
+					label: "CI/CD",
 					autogenerate: { directory: "ci" },
-				},
-				{
-					label: "Advanced Options (TBD)",
-					autogenerate: { directory: "advanced" },
 				},
 			],
 		}),

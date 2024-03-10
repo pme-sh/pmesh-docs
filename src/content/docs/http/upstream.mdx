@@ -1,7 +1,42 @@
 ---
-title: Upstream Integration (TBD)
+title: Upstream Integration
 sidebar:
   order: 3
 ---
 
-TODO: Documentation on special Headers, 444 response, etc.
+Integrating pmesh into your existing service is straightforward and painless.
+pmesh moves the responsibility of assigning ports and managing the lifecycle of your services from the service itself to the reverse-proxy.
+
+## Upstream Configuration
+
+pmesh will set three environment variables to inform the service about the host and port it should listen on.
+By default these are `HOST`, `PORT`, and `LISTEN`, but they can be customized in the `pm3.yml` file as shown in the [Primitives](/services/primitives/#env_host-and-env_port-env_listen) section.
+
+- `HOST` is the host the service should listen on. ex: `127.2.0.13`
+- `PORT` is the port the service should listen on. ex: `70`
+- `LISTEN` is the combination of `HOST` and `PORT` in the form `HOST:PORT`. ex: `127.2.0.13:70`
+
+## Special headers
+
+pmesh will also set some special headers to inform the service about the original request.
+
+`P-` prefix is used for the request headers sent to the service.
+`X-` prefix is used for the response (or shared) headers where we should conform to the standard custom header naming convention.
+
+- **X-Ray**: is the trace id of the request. ex: `0057b2440ed282da-MYH`
+- **P-Asn**: is the ASN of the client. ex: `AS15169 GOOGLE`
+- **P-Ip**: is the original IP of the request. ex: `8.8.8.8`
+- **P-Ip-Geo**: is the geo location of the original IP of the request. ex: `US`
+- **P-Marked**: is set to `1` if the request is marked by the ASN list specified in the manifest.
+- **P-Cf**: is set to `1` if the request is coming from Cloudflare.
+- **P-Vpn**: is set to `1` if the request is coming from a VPN.
+- **P-Internal**: is a boolean indicating if the request is internal or not. ex: `1`
+- **P-Portal**: is set to `1` if the request is coming from the portal directive.
+
+`X-Forwarded-For` and `X-Forwarded-Proto` will also be set conforming to [RFC 7239](https://tools.ietf.org/html/rfc7239).
+
+## Special response codes
+
+Similar to `nginx`, pmesh will treat the following response codes as special:
+
+- `444` will be treated as a special code to close the connection without sending a response.

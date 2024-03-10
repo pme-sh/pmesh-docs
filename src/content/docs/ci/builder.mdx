@@ -1,0 +1,93 @@
+---
+title: Builder
+sidebar:
+  order: 1
+---
+
+import { FileTree, Steps } from "@astrojs/starlight/components";
+
+pmesh builder is triggered when a service is being started. It is responsible for building the service and its dependencies for the first time, or when the service has changed.
+
+When a service is started, first the builder is triggered to build the service and its dependencies.
+
+<Steps>
+
+1. Service start is triggered by user
+2. **Hash**
+
+   The builder walks the directory containing the service, following the `.gitignore` rules, and hashes all files after stable sorting. This hash is used to create a _build id_.
+
+3. **Cache**
+
+   The build id is used to check if the service already has its artifacts in the cache. This is done by reading the `.run/.buildid` file (if it exists) and comparing it to the build id we just calculated.
+
+   <FileTree>
+
+   - .build-00024697…
+     - .buildid 🤔 compared to the result
+     - app-old.js
+   - .run 🔗 .build-00024697…
+     - ...
+   - app-new.ts #️⃣ hashed
+
+   </FileTree>
+
+4. **Build**
+
+   If there is a mismatch, the builder will create a new directory, `.build`, write the build id to `.buildid` and execute the build process as specified in the manifest.
+
+   <FileTree>
+
+   - .build-00024697…
+     - .buildid
+     - app-old.js
+   - .build 🔨 Active build directory
+     - .buildid
+     - app-new.js ✨ Created by the build steps
+   - .run 🔗 .build-00024697…
+     - ...
+   - app-new.ts
+
+   </FileTree>
+
+5. **Archive & Clean**
+
+   If successful, the final `.build` directory is renamed to `.build-{timestamp}` and the `.run` directory is symlinked to the new directory.
+   This is an atomic operation, so the service will not be affected by the change.
+
+   If there are more than two archived builds, the old instances are removed.
+
+   <FileTree>
+
+   - .build-00024697… 🗄️ archive #1
+     - .buildid
+     - app-old.js
+   - .build-00024700… 🏃‍♂️ current build
+     - .buildid
+     - app-new.js
+   - .run 🔗 .build-00024700… (✏️ updated)
+     - ...
+   - app-new.ts
+
+   </FileTree>
+
+   Previous build is kept as a backup in case the new build is not healthy, and to ensure there is no downtime during the startup process.
+
+6. **Start, Validate & Swap**
+
+   The service is then started using the `.run` directory, once it becomes heathy, old instances are gracefully stopped and loadbalancer is updated.
+
+</Steps>
+
+This process is designed to be fast, reliable and simple to integrate with existing build steps.
+
+- The static `.build` name requires no pmesh specific integration other than changing the output directory.
+- Similary, the static `.run` directory ensures the service can be started without any communication with the builder.
+- Archiving process is atomic and does not require any additional coordination, the running service is not affected by the change as only the symlink is updated.
+
+Unlike a traditional CI, every server is responsible for building its own artifacts. For this reason you should always make sure that the build process is deterministic and reproducible, or
+at least that the user-facing artifacts are the same across different servers.
+
+## Integrating with pre-existing CI/CD
+
+If you wish to integrate pmesh with your existing CI/CD, you can simply have a post-build step that sends the `/repo/update` request to the cluster once the acceptance tests have passed.
