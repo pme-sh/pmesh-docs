@@ -33,6 +33,7 @@ export default defineConfig({
 			customCss: ["./src/assets/landing.css"],
 			sidebar: [
 				{ label: "Getting started", link: "getting-started" },
+				{ label: "Why pmesh?", link: "why" },
 				{
 					label: "The Basics",
 					autogenerate: { directory: "basics" },

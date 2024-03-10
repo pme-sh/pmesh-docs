@@ -1,0 +1,49 @@
+---
+title: Why pmesh?
+---
+
+> We already have nginx/haproxy/.../pm2/nodemon... at home. Why do we need yet another reverse proxy?
+
+Let's consider a typical hobbyist stack with nginx, pm2, and a few microservices.
+
+## The reverse proxy
+
+The first hurdle is configuration. NGINX's configuration is inherently static. Each addition or removal of a service necessitates a manual update of the configuration across every service, server, and service instance.
+
+This process is not only cumbersome but also prone to errors. This is the exact reason why NGINX-Plus offers a dynamic configuration API, a feature included by newer alternatives like HAProxy. But, does this truly address the underlying issue?
+
+Who updates the configuration when services change? How does reverse-proxy respond if the service is down? Can it detect _when_ a service is ready to handle requests?
+
+In an ideal scenario, you aim for zero-downtime deployments, which necessitates that the entity managing the configuration is also in tune with the deployment process, capable of updating the configuration at the right time, and able to manage the lifecycle of services precisely when needed.
+
+This complexity often cascades into a tangle of scripts and tools for configuration management, supplemented by another layer of services to oversee these tools and CI/CD pipelines.
+
+This challenge is not unique to small-scale operations; even giants like [Dropbox](https://dropbox.tech/infrastructure/how-we-migrated-dropbox-from-nginx-to-envoy) and [Cloudflare](https://blog.cloudflare.com/how-we-built-pingora-the-proxy-that-connects-cloudflare-to-the-internet#:~:text=Architecture%20limitations%20hurt%20performance)
+have encountered similar issues, prompting them to migrate to or build their own solutions, respectively.
+
+## The service manager
+
+On the other hand, you have pm2 (or nodemon, systemd, etc). These tools are designed to manage a single server, and they are not designed to manage a cluster of servers.
+Observability is confined to the server level, necessitating additional tools for cluster management.
+
+That script you rely on for reverse proxy configuration? Now it needs to integrate with your service management tool, adding another layer of complexity.
+
+## The message bus
+
+Interservice communication demands a message bus, with options like RabbitMQ, Kafka, or NATS. However, this introduces yet another set of configurations, services, and integrations to manage.
+
+## The vision
+
+The trend towards serverless architectures in recent years underscores a collective effort to escape the burdens of this complexity.
+It simply stops being feasible to manage all of it on top of your actual business logic, so we resort to overpaying for managed services or serverless offerings.
+
+We argue that this issue is not inherent to the problem, but rather is a result of the disconnect between the reverse proxy, the service manager, and the message bus.
+
+Had these components operated in concert, fully aware of each other's states and actions, with just a nudge in the right direction, the entire infrastructure would be streamlined, more intuitive, and easier to manage; quickly diminishing the operational burden.
+
+This synergy is the cornerstone of the design philosophy we have adopted for pmesh, the simple yet powerful mesh of processes.
+
+- One project manifest, deployed alongside the code, should be enough to describe the entire infrastructure —fully functional for both development and production, whether it is Windows, macOS, or Linux.
+- Bootstrapping a new server should be as simple as cloning a repository and running a single command.
+- Service discovery, load balancing, and inter-service communication should be automatic and transparent.
+- Logging and monitoring should be built-in and easy to use. A request should be traceable from the moment it enters the system to the moment it leaves.
