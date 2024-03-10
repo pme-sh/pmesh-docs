@@ -1,0 +1,43 @@
+---
+title: TLS Certificates
+sidebar:
+  order: 4
+---
+
+By default, all certificates are issued by the Local pmesh certificate authority (CA).
+This is usually good enough for development, testing, as well as for production deployments where the server is behind another server, for instance Cloudflare.
+
+However, in some cases, you may want to BYOC (Bring Your Own Certificate) or issue certificates automatically using an ACME server like Let's Encrypt.
+
+## BYOC (Bring Your Own Certificate)
+
+To use your own certificate files, you have to use the `certs` section under your virtual host. The `certs` section is a map of domain names to certificate details.
+The certificate files must be in PEM format.
+
+You can find an example below:
+
+```yaml
+server:
+  myapp.com, myapp.local:
+    certs:
+      myapp.com:
+        cert: "/path/to/cert"
+        key: "/path/to/key"
+    router:
+      - return 200 "hello"
+```
+
+## Let's Encrypt
+
+Currently, pmesh only supports ACME v2 via Let's Encrypt, and it only supports the TLS-ALPN-01 challenge.
+To use Let's Encrypt, you define a certs section similar to the BYOC example, but instead of specifying the certificate and key files, you specify `cert: letsencrypt`.
+
+```yaml
+server:
+  myapp.com, myapp.local:
+    certs:
+      myapp.com:
+        cert: letsencrypt
+    router:
+      - return 200 "hello"
+```

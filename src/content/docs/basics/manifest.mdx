@@ -35,6 +35,8 @@ services:
 # A map of virtual hosts
 server:
   example.com, example.local:
+	 certs:
+    example.com: { cert: "letsencrypt" }
 	 router:
 		- example.com/static/: cdn
 		- example.com/: frontend
@@ -137,6 +139,7 @@ Currently the configuration supported is as follows:
 
 - `no_upgrade` - Disable automatic HTTPS upgrade (`Upgrade-Insecure-Requests: 1`)
 - `router` - A list of routers to use for the virtual host
+- `certs` - A map of certificates to use for the virtual host, where the key is the top-level hostname, and the value is the certificate configuration.
 
 It is very minimal since the more complex configurations are defined in the routers themselves, which we will cover in the following sections.
 
