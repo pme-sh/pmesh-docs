@@ -142,6 +142,7 @@ myapp: !App
   auto_scale_defer: 10s
   upscale_percent: 80
   downscale_percent: 20
+  stdin: false
 ```
 
 ### `monitor` and `lb`
@@ -313,3 +314,10 @@ The `upscale_percent` field is the percentage of one-core CPU usage to trigger u
 - **Default**: `0.02`
 
 The `downscale_percent` field is the percentage of one-core CPU usage to trigger downscale.
+
+### `stdin`
+
+- **Type**: `bool`
+- **Default**: `false`
+
+If this field is set to `true`, the app will be started with stdin passed to it, which is useful for interactive apps such as Vite in development mode.
