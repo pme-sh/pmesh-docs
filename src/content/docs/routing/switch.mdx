@@ -13,7 +13,7 @@ The `Switch-Host` router will route the request based on the `Host` header.
 ```yaml
 site.com, site.local:
   router:
-    - !Switch-Host:
+    - !Switch-Host
       - x.site.com: status 404
     - hi
 ```
@@ -30,7 +30,7 @@ The `Switch-Path` router will route the request based on the `Path` header.
 ```yaml
 site.com, site.local:
   router:
-    - !Switch-Path:
+    - !Switch-Path
       - /hi: status 404
     - hi
 ```
@@ -49,7 +49,7 @@ The `Switch-Method` router will route the request based on the `Method` header.
 ```yaml
 site.com, site.local:
   router:
-    - !Switch-Method:
+    - !Switch-Method
       - POST: status 404
     - hi
 ```
@@ -67,7 +67,7 @@ This is useful for routing HTTP/2 requests differently than HTTP/1.1 requests, f
 ```yaml
 site.com, site.local:
   router:
-    - !Switch-Proto:
+    - !Switch-Proto
       - HTTP/1.0: status 404
     - hi
 ```
@@ -85,7 +85,7 @@ The `Switch-UserAgent` router will route the request based on the `User-Agent` h
 ```yaml
 site.com, site.local:
   router:
-    - !Switch-UserAgent:
+    - !Switch-UserAgent
       - Mozilla: status 404
     - hi
 ```
@@ -102,7 +102,7 @@ The `Switch-Referer` router will route the request based on the `Referer` header
 ```yaml
 site.com, site.local:
   router:
-    - !Switch-Referer:
+    - !Switch-Referer
       - /hi: status 404
     - hi
 ```
