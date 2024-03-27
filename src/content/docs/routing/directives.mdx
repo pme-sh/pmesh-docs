@@ -38,7 +38,7 @@ Note that although proxy-host will not affect the router, path will.
 ```yaml
 site.com, site.local:
   router:
-    - path "/new-path"
+    - path /new-path
     - site.com/new-path: log "Hit new path"
 ```
 
@@ -51,8 +51,8 @@ The `path-join` directive is used to change the path similar to `path` but it wi
 ```yaml
 site.com, site.local:
   router:
-    - path "/new-path"
-    - path-join "./sub-path"
+    - path /new-path
+    - path-join ./sub-path
 ```
 
 The above example will change the path of the request to `/new-path/sub-path`.
@@ -64,8 +64,8 @@ The `path-ljoin` directive is used to change the path by performing a left join 
 ```yaml
 site.com, site.local:
   router:
-    - path "/new-path"
-    - path-ljoin "/sub-path"
+    - path /new-path
+    - path-ljoin /sub-path
 ```
 
 The above example will change the path of the request to `/sub-path/new-path`.
@@ -77,8 +77,8 @@ The `path-trim` directive is used to trim the path of the request. This will rem
 ```yaml
 site.com, site.local:
   router:
-    - path "/new-path"
-    - path-trim "/new-path"
+    - path /new-path
+    - path-trim /new-path
 ```
 
 The above example will change the path of the request to `/`.
@@ -90,8 +90,8 @@ The `path-ltrim` directive is used to trim the path of the request. This will re
 ```yaml
 site.com, site.local:
   router:
-    - path "/new-path"
-    - path-ltrim "/new-path"
+    - path /new-path
+    - path-ltrim /new-path
 ```
 
 The above example will change the path of the request to `/`.
@@ -235,7 +235,7 @@ This may cause a restart loop if not used correctly, so use with caution.
 ```yaml
 site.com, site.local:
   router:
-    - portal "https://example.com"
+    - portal https://example.com
 example.com:
   router:
     - internal
