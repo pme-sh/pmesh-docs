@@ -7,22 +7,23 @@ sidebar:
 The pmesh load balancer allows you to configure the load balancing strategy, the session kind, the retry policy, and the error handling for 4xx, 5xx, and 404 responses.
 
 ```yaml
-retry:
-  attempts: 3
-  backoff: 1s
-  timeout: 10s
-strat: round-robin
-state: sticky
-404:
-  limit: 1/s block_after=2/s block_for=10m
-  handle:
-    - log "hi"
-4xx:
-  handle:
-    - log "bad user! bad!"
-5xx:
-  handle:
-    - log "bad server!"
+lb:
+  retry:
+    attempts: 3
+    backoff: 1s
+    timeout: 10s
+  strat: round-robin
+  state: sticky
+  404:
+    limit: 1/s block_after=2/s block_for=10m
+    handle:
+      - log "hi"
+  4xx:
+    handle:
+      - log "bad user! bad!"
+  5xx:
+    handle:
+      - log "bad server!"
 ```
 
 ## Retry Policy | `retry`
@@ -33,10 +34,11 @@ state: sticky
 The `retry` field is an object that defines the retry policy for the app.
 
 ```yaml
-retry:
-  attempts: 3
-  backoff: 1s
-  timeout: 10s
+lb:
+  retry:
+    attempts: 3
+    backoff: 1s
+    timeout: 10s
 ```
 
 The `attempts` field is the number of attempts to make before giving up, the `backoff` field is the initial backoff time, and the `timeout` field is the maximum time to wait for the app to become ready.

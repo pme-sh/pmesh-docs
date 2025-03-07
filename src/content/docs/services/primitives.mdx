@@ -94,6 +94,8 @@ The `Proxy` service is a reverse proxy that forwards requests to a set of upstre
 
 ```yaml
 myproxy: !Proxy
+  monitor: # See 'Health monitoring' for details
+  lb: # See 'Load balancing' for details
   upstreams:
 	 - http://localhost:8080
 	 - http://localhost:8081
@@ -101,8 +103,7 @@ myproxy: !Proxy
 
 ### `monitor` and `lb`
 
-The `monitor` and `lb` fields are used to define the health monitor and load balancer for the proxy service, respectively.
-Since we will cover each of these in the `Load Balancer` section, for the sake of brevity, we will skip them here.
+See [Health monitoring](/http/monitors) and [Load balancing](/http/config) for details.
 
 ### `upstreams`
 
@@ -118,6 +119,8 @@ Since every other service is built on top of the `App` service, it is the most c
 
 ```yaml
 myapp: !App
+  monitor: # See 'Health monitoring' for details
+  lb: # See 'Load balancing' for details
   root: .
   run: npm start
   build: npm run build
@@ -147,8 +150,7 @@ myapp: !App
 
 ### `monitor` and `lb`
 
-The `monitor` and `lb` fields are used to define the health monitor and load balancer for the proxy service, respectively.
-Since we will cover each of these in the `Load Balancer` section, for the sake of brevity, we will skip them here.
+See [Health monitoring](/http/monitors) and [Load balancing](/http/config) for details.
 
 ### `root`
 

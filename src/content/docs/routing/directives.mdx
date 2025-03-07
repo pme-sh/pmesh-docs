@@ -27,7 +27,7 @@ This directive is used to change the host of the request. This changes the `Host
 ```yaml
 site.com, site.local:
   router:
-    - proxy-host "example.com"
+    - proxy-host example.com
 ```
 
 ## path
@@ -103,8 +103,8 @@ The `header` directive is used to set a header on the response, while the `proxy
 ```yaml
 site.com, site.local:
   router:
-    - header "X-Header" "Value"
-    - proxy-header "X-Header" "Value"
+    - header X-Header "Value"
+    - proxy-header X-Header "Value"
 ```
 
 ## add-header, add-proxy-header
@@ -116,8 +116,8 @@ Difference between `header` and `add-header` is that `header` will replace the h
 ```yaml
 site.com, site.local:
   router:
-    - header "X-Header" "Value"
-    - add-header "X-Header" "Value2"
+    - header X-Header "Value"
+    - add-header X-Header "Value2"
 ```
 
 This will result in the `X-Header` header having the value `Value, Value2`.
@@ -129,8 +129,8 @@ The `del-header` directive is used to delete a header from the response, while t
 ```yaml
 site.com, site.local:
   router:
-    - del-header "X-Header"
-    - del-proxy-header "X-Header"
+    - del-header X-Header
+    - del-proxy-header X-Header
 ```
 
 ## rewrite
